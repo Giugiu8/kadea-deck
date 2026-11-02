@@ -10,7 +10,7 @@ The public 0.6.0 candidate retains that runtime and adds isolated coverage for:
 - Settings changes during preparation, rollback on partial copy failure, preserved Apps edits on upgrade, safe uninstall and junction refusal.
 - Real SDK WebSocket rendering, real local hook/HTTP and protocol socket fixtures, bounded streaming history rejection and deep-link allowlists.
 
-The candidate passes 61 tests, including 12 installer cases. Installer fixtures use temporary synthetic profiles and a fake host lifecycle. They do not install into the real user's AppData or fabricate active agent sessions. The real release ZIP was also extracted and exercised through fresh install, upgrade and uninstall in a temporary Windows profile. Release verification includes the official Elgato validator and a production dependency audit without known vulnerabilities at preparation time.
+The 0.6.1 candidate passes 62 tests, including 13 installer cases. Installer fixtures use temporary synthetic profiles and a fake host lifecycle. They do not install into the real user's AppData or fabricate active agent sessions. The real release ZIP was also extracted and exercised through fresh install, upgrade and uninstall in a temporary Windows profile. Release verification includes the official Elgato validator and a production dependency audit without known vulnerabilities at preparation time.
 
 A separate read-only reviewer reproduced and helped close exact-directory rollback, partial uninstall, shared-lock and failed-backup recovery defects. A bounded Opus consultation timed out without a verdict; it is not counted as approval.
 

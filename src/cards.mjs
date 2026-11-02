@@ -1,4 +1,4 @@
-// Original Kadea Deck graphics. Shared by the design preview and the plugin renderer.
+// Original Cardea Deck graphics. Shared by the design preview and the plugin renderer.
 import {statusStyles} from './status-style.mjs';
 import {brandImages} from '../assets/brands.mjs';
 import {iconSvg as icon} from './icons.mjs';

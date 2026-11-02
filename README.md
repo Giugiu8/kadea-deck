@@ -1,4 +1,4 @@
-# Kadea Deck
+# Cardea Deck
 
 **Claude and Codex, one consistent Stream Deck.** Local chat status, direct chat switching, request-bound approvals and large, readable status labels.
 
@@ -10,7 +10,7 @@ The illustration uses sample tasks. The installed plugin starts with real local 
 
 ## Install tomorrow
 
-1. Download **Kadea-Deck-0.6.0-windows.zip** from [Releases](https://github.com/Giugiu8/kadea-deck/releases), then extract the entire archive to a permanent folder.
+1. Download **Cardea-Deck-0.6.1-windows.zip** from [Releases](https://github.com/Giugiu8/cardea-deck/releases), then extract the entire archive to a permanent folder.
 2. Have **Stream Deck 7.1+**, **Node.js 22+**, and your signed-in Claude/Codex desktop apps installed. Install the official Elgato Codex plugin separately for dictation, model selection, new chat and usage. Connect the MK.2 and open Stream Deck once so its device profile exists.
 3. In the extracted folder run:
 
@@ -20,7 +20,7 @@ The illustration uses sample tasks. The installed plugin starts with real local 
    ```
 
    Or double-click `Install.cmd`. Setup restarts **Stream Deck only**, adds its own profile, and preserves unrelated Claude hooks and custom status lines. No admin rights, API key, npm, ImageMagick or source build required for the download.
-4. Select **Kadea Deck** in Stream Deck. Start a new Claude chat to load its hooks. On **Apps**, change the generic bookmarks and assign the five **App wählen** keys to your local programs.
+4. Select **Cardea Deck** in Stream Deck. Start a new Claude chat to load its hooks. On **Apps**, change the generic bookmarks and assign the five **App wählen** keys to your local programs.
 5. Run `Doctor.ps1` or `node doctor.mjs` for a report without chat titles, IDs, tokens or credentials.
 
 The currently supported installer expects the standard Windows Stream Deck location. If multiple MK.2 devices are configured, use `node setup.mjs --device-id "<local device ID>"`. A source-linked development install is deliberately preserved and refused as an automatic upgrade target.
@@ -76,3 +76,5 @@ node release.mjs
 Pinned dependencies, own vector artwork and MIT license. Extracted application logos and manufacturer plugin code are not distributed. The Zod override pins a patched version of the mini API used by Elgato's SDK; SDK integration tests cover that combination. CLI-only audit findings are documented in [SECURITY.md](SECURITY.md).
 
 Read [the comparison and design decisions](docs/COMPARISON.md), [CHANGELOG.md](CHANGELOG.md) and [SECURITY.md](SECURITY.md). Bug reports should include the version, Windows/Stream Deck/app versions and a redacted diagnostic report. Do not attach local state, connection files, account tokens or conversations.
+
+Compatibility identifiers (`de.cardea.kadeadeck`, `.kadeadeck`, `KADEA_DECK_HOME`) retain their legacy spelling so installed keys, hooks and local state continue to work. The product name is Cardea Deck.

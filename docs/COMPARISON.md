@@ -1,6 +1,6 @@
 # Design comparison
 
-Sources inspected read-only on 2026-11-02. These are engineering references, not an endorsement or claim that Kadea Deck outperforms them. No source code or vendor artwork was copied from these repositories.
+Sources inspected read-only on 2026-11-02. These are engineering references, not an endorsement or claim that Cardea Deck outperforms them. No source code or vendor artwork was copied from these repositories.
 
 | Project and inspected commit | Lesson adopted | Boundary |
 |---|---|---|

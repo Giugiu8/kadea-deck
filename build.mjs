@@ -15,15 +15,15 @@ fs.copyFileSync(path.join(root,'hooks/bridge.cjs'),path.join(out,'hooks/bridge.c
 fs.copyFileSync(path.join(root,'hooks/statusline.cjs'),path.join(out,'hooks/statusline.cjs'));
 fs.copyFileSync(path.join(root,'hooks/runtime.cjs'),path.join(out,'hooks/runtime.cjs'));
 const {cardSvg}=await import('./src/cards.mjs');
-const svg=path.join(root,'dist/card-source.svg');fs.writeFileSync(svg,cardSvg({kind:'nav',title:'Kadea',icon:'start',active:true}));
+const svg=path.join(root,'dist/card-source.svg');fs.writeFileSync(svg,cardSvg({kind:'nav',title:'Cardea',icon:'start',active:true}));
 execFileSync('magick',[svg,path.join(out,'imgs/key.png')],{windowsHide:true});
 execFileSync('magick',[svg,'-resize','288x288',path.join(out,'imgs/key@2x.png')],{windowsHide:true});
 execFileSync('magick',[svg,'-resize','256x256',path.join(out,'imgs/plugin.png')],{windowsHide:true});
 execFileSync('magick',[svg,'-resize','512x512',path.join(out,'imgs/plugin@2x.png')],{windowsHide:true});
 if(fs.existsSync(path.join(out,'imgs/key.svg')))fs.unlinkSync(path.join(out,'imgs/key.svg'));
 const labels={session:'Claude-Sitzung',summary:'Claude-Übersicht',target:'Claude-Ziel wählen',permission:'Claude-Freigabe',ack:'Ergebnis gelesen',quota:'Claude-Kontingent',open:'Claude öffnen','codex-session':'Codex-Chat mit Status','codex-permission':'Codex-Freigabe','codex-stop':'Codex stoppen (halten)'};
-const manifest={UUID:'de.cardea.kadeadeck',Name:'Kadea Deck',Author:'Cardea',Description:'Gemeinsame Codex-/Claude-Karten, klare Ziele und lokale Freigaben.',Version:`${version}.0`,SDKVersion:2,Icon:'imgs/plugin',Category:'Kadea Deck',CategoryIcon:'imgs/plugin',CodePath:'bin/plugin.mjs',Nodejs:{Version:'20'},OS:[{Platform:'windows',MinimumVersion:'10'}],Software:{MinimumVersion:'7.1'},Actions:Object.entries(labels).map(([key,Name])=>({UUID:`de.cardea.kadeadeck.${key}`,Name,Icon:'imgs/key',Tooltip:Name,PropertyInspectorPath:'pi/index.html',Controllers:['Keypad'],States:[{Image:'imgs/key',ShowTitle:false}]}))};
+const manifest={UUID:'de.cardea.kadeadeck',Name:'Cardea Deck',Author:'Cardea',Description:'Gemeinsame Codex-/Claude-Karten, klare Ziele und lokale Freigaben.',Version:`${version}.0`,SDKVersion:2,Icon:'imgs/plugin',Category:'Cardea Deck',CategoryIcon:'imgs/plugin',CodePath:'bin/plugin.mjs',Nodejs:{Version:'20'},OS:[{Platform:'windows',MinimumVersion:'10'}],Software:{MinimumVersion:'7.1'},Actions:Object.entries(labels).map(([key,Name])=>({UUID:`de.cardea.kadeadeck.${key}`,Name,Icon:'imgs/key',Tooltip:Name,PropertyInspectorPath:'pi/index.html',Controllers:['Keypad'],States:[{Image:'imgs/key',ShowTitle:false}]}))};
 fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify(manifest,null,2));
-fs.writeFileSync(path.join(out,'package.json'),JSON.stringify({name:'kadea-deck',private:true,type:'module',version}));
+fs.writeFileSync(path.join(out,'package.json'),JSON.stringify({name:'cardea-deck',private:true,type:'module',version}));
 fs.mkdirSync(path.join(out,'pi'),{recursive:true});fs.writeFileSync(path.join(out,'pi/index.html'),fs.readFileSync(path.join(root,'pi/index.html'),'utf8').replaceAll('__VERSION__',version));
 console.log(`Built ${out}`);

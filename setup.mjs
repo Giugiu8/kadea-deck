@@ -24,7 +24,7 @@ export function createPlan({directory,home,appData,node=process.execPath,deviceI
  const version=verifyBundle(directory),pluginRoot=path.join(appData,'Elgato/StreamDeck/Plugins'),profilesRoot=path.join(appData,'Elgato/StreamDeck/ProfilesV3');
  const plugin=localPath(pluginRoot,path.join(pluginRoot,uuid)),profile=localPath(profilesRoot,path.join(profilesRoot,profileId));
  const runtime=localPath(home,path.join(home,'.kadeadeck')),receipt=localPath(runtime,path.join(runtime,'install.json'));
- if(!fs.existsSync(receipt)&&(fs.existsSync(plugin)||fs.existsSync(profile)))throw Error('An unmanaged Kadea Deck installation already exists; preserve it and inspect it before upgrading');
+ if(!fs.existsSync(receipt)&&(fs.existsSync(plugin)||fs.existsSync(profile)))throw Error('An unmanaged Cardea Deck installation already exists; preserve it and inspect it before upgrading');
  if(fs.existsSync(receipt)){const previous=json(receipt);if(previous.schema!==1||previous.plugin!==plugin||previous.profile!==profile)throw Error('Installation receipt does not match this PC');}
  const devices=new Set();if(fs.existsSync(profilesRoot))for(const entry of fs.readdirSync(profilesRoot,{withFileTypes:true}))if(entry.isDirectory()&&!entry.isSymbolicLink())try{const m=json(path.join(profilesRoot,entry.name,'manifest.json'));if(m.Device?.Model==='20GBA9901'&&typeof m.Device.UUID==='string'&&m.Device.UUID)devices.add(m.Device.UUID);}catch{}
  if(deviceId&&!devices.has(deviceId))throw Error('Requested MK.2 device is not known to Stream Deck');
@@ -67,6 +67,7 @@ export function applyPlan(plan,{host=()=>{}}={}){
   if(digest(plan.settings)!==plan.settingsHash)throw Error('Claude settings changed during setup');
   preserve(plan.plugin,backup,undo,true);fs.mkdirSync(path.dirname(plan.plugin),{recursive:true});fs.cpSync(plan.sourcePlugin,plan.plugin,{recursive:true});
   if(!fs.existsSync(plan.profile)){preserve(plan.profile,backup,undo);fs.mkdirSync(path.dirname(plan.profile),{recursive:true});fs.cpSync(plan.sourceProfile,plan.profile,{recursive:true});const file=path.join(plan.profile,'manifest.json'),top=json(file);top.Device.UUID=plan.deviceId;atomic(file,JSON.stringify(top));}
+  else{const file=path.join(plan.profile,'manifest.json'),top=json(file);if(top.Name==='Kadea Deck'){const item=preserve(file,backup,undo);top.Name='Cardea Deck';atomic(file,JSON.stringify(top));item.written=digest(file);}}
   const settingsUndo=preserve(plan.settings,backup,undo);atomic(plan.settings,JSON.stringify(plan.merged,null,2)+'\n');settingsUndo.written=digest(plan.settings);
   if(plan.codexExecutable){const file=path.join(runtime,'codex-client.json');preserve(file,backup,undo);atomic(file,JSON.stringify({enabled:true,executable:plan.codexExecutable}));}
   preserve(plan.receipt,backup,undo);atomic(plan.receipt,JSON.stringify({schema:1,version:plan.version,plugin:plan.plugin,profile:plan.profile,backup,installedAt:new Date().toISOString()}));
@@ -96,6 +97,6 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const directory=path.dirname(fileURLToPath(import.meta.url)),home=process.env.USERPROFILE,appData=process.env.APPDATA;if(!home||!appData)throw Error('Windows user profile is unavailable');
   const host=mode=>hostControl(directory,mode);
   if(process.argv.includes('--uninstall')){uninstall({home,appData,host});console.log('Removed own hooks and archived the plugin/profile. Local state and backups retained.');}
-  else{const i=process.argv.indexOf('--device-id'),plan=createPlan({directory,home,appData,deviceId:i>=0?process.argv[i+1]:null,codexExecutable:discoverCodex()});if(process.argv.includes('--check'))console.log(`Ready: Kadea Deck ${plan.version}, MK.2, existing Claude settings preserved. Codex app: ${!!plan.codexExecutable}. Nothing changed.`);else{applyPlan(plan,{host});console.log(`Installed Kadea Deck ${plan.version}. Select the Kadea Deck profile in Stream Deck. Customize Apps on page 4. Run Doctor.ps1 for diagnostics.`);}}
- }catch(error){console.error('Kadea Deck: '+error.message);process.exitCode=1;}
+  else{const i=process.argv.indexOf('--device-id'),plan=createPlan({directory,home,appData,deviceId:i>=0?process.argv[i+1]:null,codexExecutable:discoverCodex()});if(process.argv.includes('--check'))console.log(`Ready: Cardea Deck ${plan.version}, MK.2, existing Claude settings preserved. Codex app: ${!!plan.codexExecutable}. Nothing changed.`);else{applyPlan(plan,{host});console.log(`Installed Cardea Deck ${plan.version}. Select the Cardea Deck profile in Stream Deck. Customize Apps on page 4. Run Doctor.ps1 for diagnostics.`);}}
+ }catch(error){console.error('Cardea Deck: '+error.message);process.exitCode=1;}
 }

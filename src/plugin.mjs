@@ -95,5 +95,5 @@ let scanning=false,lastScan=0;async function refresh(){if(scanning||Date.now()-l
 setInterval(refresh,30_000).unref();store.on('change',()=>{if(!scanning)void refresh();});
 void refresh();
 process.on('SIGTERM',()=>{receiver.broker.close();codex?.close();process.exit(0);});
-process.on('uncaughtException',()=>{streamDeck.logger.error('Kadea Deck: unerwarteter Fehler; keine Freigabe erteilt.');receiver.broker.close();codex?.close();process.exit(1);});
+process.on('uncaughtException',()=>{streamDeck.logger.error('Cardea Deck: unerwarteter Fehler; keine Freigabe erteilt.');receiver.broker.close();codex?.close();process.exit(1);});
 streamDeck.connect();

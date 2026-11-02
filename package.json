@@ -1,6 +1,6 @@
 {
-  "name": "kadea-deck",
-  "version": "0.6.0",
+  "name": "cardea-deck",
+  "version": "0.6.1",
   "private": true,
   "type": "module",
   "description": "Unified local Claude and Codex controls for Stream Deck on Windows",

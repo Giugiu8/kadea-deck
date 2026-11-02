@@ -15,7 +15,7 @@ export class CodexCatalog extends EventEmitter {
     parser.write(piece);if(piece.endsWith('\n')){const m=parser.end();parser=new MetadataJson();length=0;const p=this.pending.get(m.id);if(p){clearTimeout(p.timer);this.pending.delete(m.id);p.resolve(m);}}
    }}catch{lost();}
   });
-  try{const init=await this.request('initialize',{clientInfo:{name:'kadea-deck',version:'0.6.0'},capabilities:{experimentalApi:true}});
+  try{const init=await this.request('initialize',{clientInfo:{name:'cardea-deck',version:'0.6.1'},capabilities:{experimentalApi:true}});
    if(init.error)throw Error('codex-catalog-initialize');this.process?.stdin.write(JSON.stringify({method:'initialized'})+'\n');
   }catch(error){lost();throw error;}
  }

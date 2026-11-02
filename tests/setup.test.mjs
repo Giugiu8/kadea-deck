@@ -76,3 +76,6 @@ test('a failed uninstall backup does not mask its error or strand an earlier ret
  try{assert.throws(()=>uninstall({...f,host:mode=>calls.push(mode)}),/injected backup copy/);}finally{fs.cpSync=original;}
  assert.deepEqual(read(f.settings),before);for(const target of [p.plugin,p.profile,p.receipt])assert.ok(fs.existsSync(target));assert.deepEqual(calls,['Stop','Start']);assert.equal(fs.existsSync(path.join(p.runtime,'install.lock')),false);
 }));
+test('branding upgrade renames only the original profile title and preserves custom titles and Apps',()=>fixture(f=>{
+ const p=f.plan();applyPlan(p);const file=path.join(p.profile,'manifest.json'),top=read(file);top.Name='Kadea Deck';write(file,top);applyPlan(f.plan());assert.equal(read(file).Name,'Cardea Deck');const custom=read(file);custom.Name='My Work Deck';write(file,custom);applyPlan(f.plan());assert.equal(read(file).Name,'My Work Deck');
+}));

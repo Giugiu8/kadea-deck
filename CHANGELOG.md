@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1 — 2026-11-02
+
+### Fixed
+- Correct the product name to **Cardea Deck** in the UI, profile, docs, package and downloads.
+- Move the public repository to `Giugiu8/cardea-deck`; retain compatibility IDs so existing keys, hooks and local state still work.
+- Rename an existing factory profile title during upgrade, preserving custom profile names and Apps edits.
+
+GitHub tag: `v0.6.1-beta.1`; Stream Deck version: `0.6.1.0`.
+
 ## 0.6.0 — 2026-11-02
 
 First public experimental Windows release; GitHub tag `v0.6.0-beta.1`, Stream Deck version `0.6.0.0`.

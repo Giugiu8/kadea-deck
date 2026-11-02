@@ -1,4 +1,4 @@
-// Original Kadea Deck icons. One 86-unit grid, rounded 3-unit strokes.
+// Original Cardea Deck icons. One 86-unit grid, rounded 3-unit strokes.
 export const iconPaths = Object.freeze({
   start: '<path d="m25 37 17-14 17 14M30 34v23h24V34M39 57V44h8v13"/>',
   chats: '<path d="M23 25h35v24H39L29 58v-9h-6zM62 35h6v24H57l-8 7v-7h-8"/>',
@@ -37,6 +37,6 @@ export const iconPaths = Object.freeze({
   open: '<path d="M37 25H24v39h39V51M46 22h20v20M66 22 40 48"/>',
 });
 export function iconSvg(name,color='#f4f7ff',transform=''){
-  if(!Object.hasOwn(iconPaths,name))throw Error(`Unknown Kadea icon: ${name}`);
+  if(!Object.hasOwn(iconPaths,name))throw Error(`Unknown Cardea icon: ${name}`);
   return `<g${transform?` transform="${transform}"`:''} fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${iconPaths[name]}</g>`;
 }

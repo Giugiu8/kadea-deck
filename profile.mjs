@@ -5,10 +5,10 @@ import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {renderCardPng} from './render-png.mjs';
 export const profileId='83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile';
-export function profileTemplate({version='0.6.0',uuid=randomUUID}={}){
+export function profileTemplate({version='0.6.1',uuid=randomUUID}={}){
  const ids=Array.from({length:4},()=>uuid().toUpperCase()),defaultId=uuid().toUpperCase();
  const names=['Claude','Codex','Aktionen','Apps'];
- const own=(kind,settings={})=>action(`de.cardea.kadeadeck.${kind}`,'de.cardea.kadeadeck','Kadea Deck',settings,version+'.0');
+ const own=(kind,settings={})=>action(`de.cardea.kadeadeck.${kind}`,'de.cardea.kadeadeck','Cardea Deck',settings,version+'.0');
  function action(id,plugin,name,settings={},v='1.0.0.0'){return{ActionID:uuid(),Name:name,UUID:id,Plugin:{UUID:plugin,Name:name,Version:v},LinkedTitle:false,Resources:null,Settings:settings,State:0,States:[{ShowTitle:false}]};}
  const native=(kind,settings={})=>action('com.elgato.openai-codex.'+kind,'com.elgato.openai-codex','Codex',settings);
  const core=(kind,settings={})=>action('com.elgato.streamdeck.'+kind,'com.elgato.streamdeck.'+kind,kind,settings);
@@ -26,7 +26,7 @@ export function profileTemplate({version='0.6.0',uuid=randomUUID}={}){
  // Empty Open actions are intentionally configured in Stream Deck on each PC.
  for(let col=0;col<5;col++)a[3][`${col},1`]=core('system.open',{path:''});
  for(let p=0;p<4;p++){for(let col=0;col<4;col++)a[p][`${col},2`]=core('profile.rotate',{PageIndex:col+1});a[p]['4,2']=p===0?own('quota'):native('usage');}
- return{manifest:{AppIdentifier:'*',Device:{Model:'20GBA9901',UUID:''},Name:'Kadea Deck',Pages:{Current:ids[0],Default:defaultId,Pages:ids},Version:'3.0'},ids,pages,links};
+ return{manifest:{AppIdentifier:'*',Device:{Model:'20GBA9901',UUID:''},Name:'Cardea Deck',Pages:{Current:ids[0],Default:defaultId,Pages:ids},Version:'3.0'},ids,pages,links};
 }
 export function writeProfile(destination,version){
  const profile=profileTemplate({version});fs.mkdirSync(destination,{recursive:true});
