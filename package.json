@@ -1,0 +1,24 @@
+{
+  "name": "kadea-deck",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Unified local Claude and Codex controls for Stream Deck on Windows",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "profile": "node profile.mjs",
+    "validate": "streamdeck validate dist/de.cardea.kadeadeck.sdPlugin",
+    "release": "node release.mjs"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "3.0.4"
+  },
+  "devDependencies": {
+    "@elgato/cli": "1.10.4",
+    "esbuild": "0.25.12"
+  },
+  "overrides": {
+    "zod": "4.6.6"
+  }
+}

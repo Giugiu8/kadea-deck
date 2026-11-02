@@ -1,0 +1,29 @@
+name: Windows build and test
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: ImageMagick for source builds
+        shell: pwsh
+        run: |
+          if (-not (Get-Command magick -ErrorAction SilentlyContinue)) {
+            choco install imagemagick --yes --no-progress
+            $location = (Get-ChildItem 'C:/Program Files/ImageMagick-*' -Directory | Select-Object -First 1).FullName
+            $location | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+      - run: node build.mjs
+      - run: node --test tests/*.test.mjs
+      - run: node profile.mjs
+      - run: node node_modules/@elgato/cli/bin/streamdeck.mjs validate dist/de.cardea.kadeadeck.sdPlugin
+      - run: npm audit --omit=dev --audit-level=high

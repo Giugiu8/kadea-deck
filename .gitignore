@@ -1,0 +1,13 @@
+node_modules/
+dist/
+release/
+.tooling/
+logs/
+*.log
+.env*
+*.pem
+*.key
+connection.json
+state.json
+codex-client.json
+codex-attempts.json
