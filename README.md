@@ -18,9 +18,20 @@ Experimental Windows beta for the **15-key Stream Deck MK.2**. Independent commu
 
 **Why it exists:** Inspired by [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro). Buying another device wasn't in my budget, so I built this for the Stream Deck I already owned.
 
+<p align="center">
+  <img src="docs/images/cardea-deck-hardware.jpg" width="520" alt="Cardea Deck on a physical Stream Deck MK.2, showing the English security demonstration layout">
+  <br>
+  <sub>On real hardware: English demonstration layout with sample security tasks. Codex usage was live when photographed.</sub>
+</p>
+
+<details>
+<summary>Explore the key layout and status colors</summary>
+
 ![Illustrative layout with sample tasks, not live sessions](docs/preview.png)
 
-*Illustrative layout with sample tasks; German UI shown. The installed plugin uses real local sources or an explicit unknown state.*
+*Illustrative layout with sample tasks; German beta UI shown. The installed plugin uses real local sources or an explicit unknown state.*
+
+</details>
 
 | See it | Open it | Decide |
 |---|---|---|
