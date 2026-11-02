@@ -16,6 +16,8 @@ Claude and Codex on your Stream Deck — see who is working, who needs you, and 
 
 Experimental Windows beta for the **15-key Stream Deck MK.2**. Independent community project; not affiliated with Anthropic, OpenAI, Elgato or Work Louder. [Deutsch: Installation und Arbeits-PC](docs/INSTALL-DE.md).
 
+**Why it exists:** Inspired by [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro). Buying another device wasn't in my budget, so I built this for the Stream Deck I already owned.
+
 ![Illustrative layout with sample tasks, not live sessions](docs/preview.png)
 
 *Illustrative layout with sample tasks; German UI shown. The installed plugin uses real local sources or an explicit unknown state.*
