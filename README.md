@@ -1,14 +1,34 @@
+<div align="center">
+
 # Cardea Deck
 
-**Claude and Codex, one consistent Stream Deck.** Local chat status, direct chat switching, request-bound approvals and large, readable status labels.
+### Your agents. One place.
+
+Claude and Codex on your Stream Deck — see who is working, who needs you, and who has an answer.
+
+[![Windows beta](https://img.shields.io/badge/Windows-beta_0.6.1-59b5ff?style=flat-square)](https://github.com/Giugiu8/cardea-deck/releases/tag/v0.6.1-beta.1)
+[![Build and tests](https://github.com/Giugiu8/cardea-deck/actions/workflows/check.yml/badge.svg)](https://github.com/Giugiu8/cardea-deck/actions/workflows/check.yml)
+[![MIT license](https://img.shields.io/badge/license-MIT-4de398?style=flat-square)](LICENSE)
+
+**[Download Windows beta](https://github.com/Giugiu8/cardea-deck/releases/tag/v0.6.1-beta.1)** · **[Installation auf Deutsch](docs/INSTALL-DE.md)** · [How it works](#controls)
+
+</div>
 
 Experimental Windows beta for the **15-key Stream Deck MK.2**. Independent community project; not affiliated with Anthropic, OpenAI, Elgato or Work Louder. [Deutsch: Installation und Arbeits-PC](docs/INSTALL-DE.md).
 
 ![Illustrative layout with sample tasks, not live sessions](docs/preview.png)
 
-The illustration uses sample tasks. The installed plugin starts with real local sources or an explicit unknown state. It never adds example sessions to your agents.
+*Illustrative layout with sample tasks; German UI shown. The installed plugin uses real local sources or an explicit unknown state.*
 
-## Install tomorrow
+| See it | Open it | Decide |
+|---|---|---|
+| Large status labels show work, questions and new answers. | Press a chat key to jump to the conversation. | Answer a supported request for the selected chat. |
+
+Same positions for both providers. Six chats per page. Navigation stays **Claude · Codex · Aktionen · Apps**. Your app shortcuts live on their own page.
+
+No cloud telemetry or account keys required by Cardea Deck. Setup preserves existing Claude hooks and custom status lines; local state stays on its PC. [Privacy and limitations](#privacy-and-limitations).
+
+## Quick start
 
 1. Download **Cardea-Deck-0.6.1-windows.zip** from [Releases](https://github.com/Giugiu8/cardea-deck/releases), then extract the entire archive to a permanent folder.
 2. Have **Stream Deck 7.1+**, **Node.js 22+**, and your signed-in Claude/Codex desktop apps installed. Install the official Elgato Codex plugin separately for dictation, model selection, new chat and usage. Connect the MK.2 and open Stream Deck once so its device profile exists.
