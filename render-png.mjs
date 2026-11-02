@@ -7,7 +7,7 @@ import {execFileSync} from 'node:child_process';
 import {cardSvg,brandBox} from './src/cards.mjs';
 import {brandImages} from './assets/brands.mjs';
 export function renderCardPng(card,destination){
- const scratch=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-render-'));
+ const scratch=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-render-'));
  const run=args=>execFileSync('magick',args,{windowsHide:true});
  try{
   const svg=path.join(scratch,'card.svg');
@@ -20,7 +20,7 @@ export function renderCardPng(card,destination){
   }
  }finally{
   // mkdtemp returned this literal absolute path, wholly inside the temp folder.
-  if(path.dirname(scratch)!==os.tmpdir()||!path.basename(scratch).startsWith('kadea-render-'))throw Error('Unexpected render scratch path');
+  if(path.dirname(scratch)!==os.tmpdir()||!path.basename(scratch).startsWith('cardea-render-'))throw Error('Unexpected render scratch path');
   fs.rmSync(scratch,{recursive:true,force:true});
  }
 }

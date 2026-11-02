@@ -37,7 +37,7 @@ function approvalFor(state){
  const requestId=request.requestId??request.id??params.requestId??params.id;
  const decisions=request.decisions??request.options??request.availableDecisions??params.decisions??params.options??params.availableDecisions;
  if(!method||!['string','number'].includes(typeof requestId)||!Array.isArray(decisions))return null;
- return{method,requestId,turnId:request.turnId??params.turnId??null,itemId:request.itemId??params.itemId??request.callId??params.callId??null,decisions:decisions.filter(d=>['accept','decline'].includes(d)),type:method.includes('command')?'Befehl':'Dateien'};
+ return{method,requestId,turnId:request.turnId??params.turnId??null,itemId:request.itemId??params.itemId??request.callId??params.callId??null,decisions:decisions.filter(d=>['accept','decline'].includes(d)),type:method.includes('command')?'Command':'Files'};
 }
 const turnWitness=raw=>typeof raw?.latestTurnStartMessageId==='string'&&raw.latestTurnStartMessageId.length>0?raw.latestTurnStartMessageId:null;
 const requestKey=(task,approval)=>approval?createHash('sha256').update(JSON.stringify([task.hostId,task.id,approval.method,approval.requestId,approval.turnId,approval.itemId])).digest('hex'):null;

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const events=['SessionStart','UserPromptSubmit','PreToolUse','PostToolUse','PostToolUseFailure','PermissionRequest','Notification','Stop','StopFailure','SessionEnd','SubagentStart','SubagentStop'];
-export const owned=command=>typeof command==='string'&&command.replaceAll('\\','/').toLowerCase().includes('/de.cardea.kadeadeck.sdplugin/hooks/');
+export const owned=command=>typeof command==='string'&&command.replaceAll('\\','/').toLowerCase().includes('/de.cardea.deck.sdplugin/hooks/');
 export function mergeHooks(input,{node,plugin,remove=false}={}){
  const settings=structuredClone(input);if(settings.hooks!=null&&(typeof settings.hooks!=='object'||Array.isArray(settings.hooks)))throw Error('Invalid hooks settings');
  settings.hooks??={};

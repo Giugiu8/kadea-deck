@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-internal static class KadeaOpen {
+internal static class CardeaOpen {
   [DllImport("shell32.dll", CharSet=CharSet.Unicode)]
   private static extern IntPtr ShellExecute(IntPtr hwnd,string verb,string file,string args,string directory,int show);
   [STAThread] private static int Main(string[] args) {

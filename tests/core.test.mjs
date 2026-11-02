@@ -24,11 +24,11 @@ test('completed turns reject delayed tool hooks even when their hook process sta
  event(s,'UserPromptSubmit',2200);assert.equal(event(s,'PreToolUse',2300),true);assert.equal(s.get('session-a').state,'working');
 });
 test('read acknowledgement binds to the exact turn and survives a process restart',()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-test-'));const file=path.join(dir,'state.json');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-test-'));const file=path.join(dir,'state.json');
  try{const s=new DeckStore({file,clock:()=>3000});event(s,'UserPromptSubmit');event(s,'Stop',1100);const old=s.get('session-a').turn;event(s,'UserPromptSubmit',1200);event(s,'Stop',1300);
   assert.equal(s.acknowledge('session-a',old),false);assert.equal(s.acknowledge('session-a',old+1),true);
   const restored=new DeckStore({file,clock:()=>3000});assert.equal(restored.get('session-a').unread,false);assert.equal(restored.connected,false);
- }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('kadea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
+ }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('unread results remain visible after SessionEnd and vanish only after explicit acknowledgement',()=>{
  const s=new DeckStore({clock:()=>2000});event(s,'UserPromptSubmit');event(s,'Stop',1100);event(s,'SessionEnd',1200);assert.equal(s.list().length,1);
@@ -50,11 +50,11 @@ test('old attention stays in priority order with an explicit stale marker',()=>{
 });
 
 test('tool events do not reorder chats within the same status, including after restart',()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-test-')),file=path.join(dir,'state.json');let now=2000;
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-test-')),file=path.join(dir,'state.json');let now=2000;
  try{const s=new DeckStore({file,clock:()=>now});event(s,'UserPromptSubmit',1000);now=2100;event(s,'UserPromptSubmit',1100,{sessionId:'session-b'});
   assert.deepEqual(s.list().map(v=>v.id),['session-a','session-b']);event(s,'PostToolUse',1200,{sessionId:'session-b'});assert.deepEqual(s.list().map(v=>v.id),['session-a','session-b']);
   const restored=new DeckStore({file,clock:()=>3000});assert.deepEqual(restored.list().map(v=>v.id),['session-a','session-b']);
- }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('kadea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
+ }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('compaction preserves a running turn and its exact held permission',()=>{
@@ -74,11 +74,11 @@ test('URL elicitation is real input attention',()=>{
 });
 
 test('desktop archive metadata hides and restores a chat without deleting it',async()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-test-'));const s=new DeckStore({clock:()=>2000});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-test-'));const s=new DeckStore({clock:()=>2000});
  try{event(s,'UserPromptSubmit');const file=path.join(dir,'local_fixture.json');fs.writeFileSync(file,JSON.stringify({cliSessionId:'session-a',sessionId:'local_123',title:'Fixture',isArchived:true}));
   await refreshDesktopMetadata(s,dir);assert.equal(s.list().length,0);assert.equal(s.get('session-a').archived,true);assert.equal(s.selected,null);
   fs.writeFileSync(file,JSON.stringify({cliSessionId:'session-a',sessionId:'local_123',title:'Fixture',isArchived:false}));await refreshDesktopMetadata(s,dir);assert.equal(s.list().length,1);assert.equal(s.get('session-a').archived,false);
- }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('kadea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
+ }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('archiving never hides or cancels an exact held permission before it is answered',()=>{
@@ -93,17 +93,17 @@ test('pending permission keeps its original tool when parallel hooks arrive',()=
  assert.equal(b.answer({sessionId:'session-a',requestId:id},'deny'),true);assert.equal(JSON.parse(r.text).hookSpecificOutput.decision.behavior,'deny');b.close();
 });
 test('persistence failures do not strand permission transports or confirm an unsaved read',()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-test-'));let b;
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-test-'));let b;
  try{const s=new DeckStore({file:dir,clock:()=>3000});assert.doesNotThrow(()=>event(s,'PermissionRequest',1000,{tool:'Bash'}));assert.ok(s.persistenceError);
   b=new PermissionBroker(s);const r=response(),id=b.hold('session-a',r);assert.ok(id);assert.equal(b.answer({sessionId:'session-a',requestId:id},'deny'),true);assert.ok(r.writableEnded);assert.equal(b.pending.size,0);
   event(s,'Stop',1200);assert.equal(s.acknowledge('session-a',s.get().turn),false);assert.equal(s.get().unread,true);assert.equal(s.get().state,'unread');
- }finally{b?.close();assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('kadea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
+ }finally{b?.close();assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('a cold receiver recovers a turn whose prompt happened while it was offline',()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-test-')),file=path.join(dir,'state.json');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-test-')),file=path.join(dir,'state.json');
  try{const before=new DeckStore({file,clock:()=>3000});event(before,'UserPromptSubmit',1000);event(before,'Stop',1100);const old=before.get().turn;
   const restored=new DeckStore({file,clock:()=>4000});assert.equal(restored.get().unread,true);assert.equal(event(restored,'PermissionRequest',3500,{tool:'Read'}),true);assert.equal(restored.get().turn,old+1);assert.equal(restored.get().state,'attention');assert.equal(restored.get().unread,false);
- }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('kadea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
+ }finally{assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-test-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('a fresh tool ID can continue after Stop while an old hook cannot reopen the result',()=>{
  const s=new DeckStore({clock:()=>4000});event(s,'UserPromptSubmit',1000);event(s,'PreToolUse',1100,{toolUseId:'old-tool'});event(s,'Stop',1200);const turn=s.get().turn;
@@ -138,10 +138,10 @@ test('HTTP rejects unauthorized and cross-origin writes; real local bridge contr
  const s=new DeckStore(),receiver=await startReceiver(s),url=`http://127.0.0.1:${receiver.port}`;
  try{
   assert.equal((await fetch(url+'/event',{method:'POST',body:'{}'})).status,403);
-  assert.equal((await fetch(url+'/event',{method:'POST',headers:{'X-Kadea-Token':'é'.repeat(64)},body:'{}'})).status,403);
-  assert.equal((await fetch(url+'/event',{method:'POST',headers:{'X-Kadea-Token':receiver.token,Origin:'https://example.com'},body:'{}'})).status,403);
+  assert.equal((await fetch(url+'/event',{method:'POST',headers:{'X-Cardea-Token':'é'.repeat(64)},body:'{}'})).status,403);
+  assert.equal((await fetch(url+'/event',{method:'POST',headers:{'X-Cardea-Token':receiver.token,Origin:'https://example.com'},body:'{}'})).status,403);
   const payload={event:'UserPromptSubmit',at:Date.now(),eventId:'http-test',sessionId:'http-session',cwd:'G:\\ExampleProject'};
-  assert.equal((await fetch(url+'/event',{method:'POST',headers:{'X-Kadea-Token':receiver.token},body:JSON.stringify(payload)})).status,200);
+  assert.equal((await fetch(url+'/event',{method:'POST',headers:{'X-Cardea-Token':receiver.token},body:JSON.stringify(payload)})).status,200);
   assert.equal(s.get('http-session').state,'working');
  }finally{await receiver.close();}
 });

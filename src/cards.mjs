@@ -51,7 +51,7 @@ export function cardSvg(card) {
     const state=card.empty?'empty':card.state,s=statusStyles[state]??statusStyles.unknown;
     body+=`<rect x="2" y="2" width="140" height="140" rx="12" fill="${s.surface}" stroke="${s.color}" stroke-width="${selected?3:1.5}"/>`;
     body+=icon(s.icon,s.color,'translate(-3 -8) scale(.77)');
-    const hint=card.hint??(card.state==='unknown'?'Unbekannt':card.subtitle??'');
+    const hint=card.hint??(card.state==='unknown'?'Unknown':card.subtitle??'');
     body+=text(128,29,hint.length>13?hint.slice(0,12)+'…':hint,11,palette.muted,500,'text-anchor="end"');
     const titleLines=Array.isArray(card.title)?card.title:[card.title];
     titleLines.slice(0,3).forEach((line,i)=>{body+=text(12,61+i*20,line,17.5,palette.white,600);});

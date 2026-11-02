@@ -1,11 +1,11 @@
-<!doctype html><html lang="de"><meta charset="utf-8"><title>Cardea Deck</title>
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Cardea Deck</title>
 <style>body{font:13px system-ui;background:#2d2d2d;color:#ddd;margin:14px}label{display:block;margin:12px 0}input,select{display:block;width:96%;margin-top:5px}small{color:#aaa}p{line-height:1.5}</style>
 <strong>Cardea Deck · __VERSION__</strong>
-<label id="slot-field">Chatplatz (1–6)<input id="slot" type="number" min="1" max="6" value="1"></label>
-<label id="decision-field">Entscheidung<select id="decision"><option value="allow">Einmal erlauben</option><option value="deny">Einmal ablehnen</option></select></label>
-<label id="window-field">Zeitraum<select id="window"><option value="seven_day">Woche</option><option value="five_hour">5 Stunden</option></select></label>
-<p>Blau arbeitet · Gelb braucht dich · Grün neue Antwort · Rot gemeldeter Fehler · Grau bereit/ungeprüft.</p>
-<small>Freigaben benötigen eine passende offene Anfrage. Stop: 1 Sekunde halten. Diagnose: Doctor.ps1 aus dem Download.</small>
+<label id="slot-field">Chat slot (1–6)<input id="slot" type="number" min="1" max="6" value="1"></label>
+<label id="decision-field">Decision<select id="decision"><option value="allow">Approve once</option><option value="deny">Decline once</option></select></label>
+<label id="window-field">Usage window<select id="window"><option value="seven_day">Week</option><option value="five_hour">5 hours</option></select></label>
+<p>Blue: WORKING · Yellow: INPUT · Green: NEW · Red: reported error · Gray: READY or UNKNOWN.</p>
+<small>Approval requires a matching pending request. Stop: hold for 1 second. Diagnostics: run Doctor.ps1 from the download.</small>
 <script>
 let socket,context,settings={};const $=id=>document.getElementById(id);
 window.connectElgatoStreamDeckSocket=(port,uuid,event,info,actionInfo)=>{const action=JSON.parse(actionInfo);context=action.context;settings=action.payload?.settings??{};socket=new WebSocket('ws://127.0.0.1:'+port);socket.onopen=()=>socket.send(JSON.stringify({event,uuid}));const kind=action.action.split('.').at(-1);$('slot-field').hidden=!['session','codex-session'].includes(kind);$('decision-field').hidden=!kind.includes('permission');$('window-field').hidden=kind!=='quota';$('slot').value=(Number(settings.slot)||0)+1;$('decision').value=settings.decision==='deny'?'deny':'allow';$('window').value=settings.window==='five_hour'?'five_hour':'seven_day';socket.onmessage=e=>{const m=JSON.parse(e.data);if(m.event==='didReceiveSettings')settings=m.payload.settings??settings;};};

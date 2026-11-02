@@ -1,10 +1,19 @@
 # Changelog
 
+## 0.7.0 — 2026-11-02
+
+- Use **Cardea Deck** throughout, including plugin identity `de.cardea.deck`, local directory `.cardeadeck`, and `CARDEA_DECK_HOME`.
+- Migrate managed installations with backups, preserved app bindings and approval journals, updated hooks, and a new connection token.
+- Translate the interface, status labels, example layout and screenshots to English.
+- Add the project credit: Powered by Claude, Codex, and my electricity bill.
+
+GitHub tag: `v0.7.0-beta.1`; Stream Deck version: `0.7.0.0`.
+
 ## 0.6.1 — 2026-11-02
 
 ### Fixed
 - Correct the product name to **Cardea Deck** in the UI, profile, docs, package and downloads.
-- Move the public repository to `Giugiu8/cardea-deck`; retain compatibility IDs so existing keys, hooks and local state still work.
+- Move the public repository to `Giugiu8/cardea-deck`.
 - Rename an existing factory profile title during upgrade, preserving custom profile names and Apps edits.
 
 GitHub tag: `v0.6.1-beta.1`; Stream Deck version: `0.6.1.0`.

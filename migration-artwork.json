@@ -1,0 +1,380 @@
+{
+  "schema": 1,
+  "source": "profile-template PNG entries in the 0.6.0 and 0.6.1 public release ZIPs",
+  "hashes": {
+    "8169b765520a1ab704ad410e10048b699071f5f273e9df93129259a9e0a1cf37": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-0.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-0.png"
+    ],
+    "a083f88d3ecfc62b3b2ed818012acfe437eb7bcd844021fbe2371512fbfe6fa8": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-1.png"
+    ],
+    "574bbcf810500bf54778fdf276f34a520d06ccacf027558357b2e3e46f5fb6d4": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-2.png"
+    ],
+    "4ec05ea4dbcd920acf89a6b261c418d4649d6c610495bf39f45564d1d7cc30a2": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-3.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-3.png"
+    ],
+    "24fdd6207b1227e6a6ea86021d4737afe83fd6db6f7a1ed733693ce4adfaf7cd": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\new.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\37CA4E89-65B3-49CC-A87D-5AA4A1AB0ED7\\Images\\new.png"
+    ],
+    "d291a15229c3bd0d487c0361739c1f73ebbb1b7a6b5395e70889e8b19b25a564": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-0.png"
+    ],
+    "bbf56656d9092a7b6f098c018b78fd98e469f4518d3fe60a7765c7d0b4593d4f": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-1.png"
+    ],
+    "c322d9eb34b62020072ee289e6bf31897f540fdbb221a3119a045cbff28d977c": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-2.png"
+    ],
+    "b22fcacbcde76404c5446b10547dd11d14f23a4afda90821a3c2655c921eca42": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\nav-3.png"
+    ],
+    "deb5355a56f91950c47c33ffe92c0862089eb8af492aca6efb42adfc4228a562": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\new.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\3CFE465E-46DC-4894-AB53-DF35BB6FC05A\\Images\\new.png"
+    ],
+    "d4c9bd8a8b4b530478d4eaa2f2c5ca9ca2fdbd3a69344feba82750d594c6137d": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-0.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-0.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-0.png"
+    ],
+    "ef6138bcc5e783f50f7639180ee1c3b6ce86726ee6f829a0e9108eb677d774ae": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-1.png"
+    ],
+    "9ba5d34f5b691bc141e7a8408ac4bd3e1fa9f3cce230790ffea4718f4dfdd832": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-2.png"
+    ],
+    "861a92f761fbb99994f38228270324c8391421e273d5e544325f8d3e84490e96": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-3.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-3.png"
+    ],
+    "03027d9860fcdb31859ce2039c22cd48ec5e4c900ff5f2f817841727af624dd0": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\new.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\56844285-6006-423A-8E7C-C289E7943F95\\Images\\new.png"
+    ],
+    "d91cec74a8d9487c9e361f1c5590fe2e31b94e39c28c4d2d97f59f926d7a4988": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-1.png"
+    ],
+    "b988fa56dcc8e94996f709375fe1fe02b19e99778d8f284c445aef0991503047": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\6C457660-5983-4DC4-AD8B-C899540EAB27\\Images\\nav-2.png"
+    ],
+    "d85a260fb868d3e7aaef55559b314619d8ecaf3980234ee7985e339854b5177d": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-0.png"
+    ],
+    "ee467654d5933e64017327f68c77c90c23a95396259bdab8ff7d6bb023dce605": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-1.png"
+    ],
+    "bcc560f7d163762016f4d2883c06d6f7440640f164bdfa8f99c6034fb367374f": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-2.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-2.png"
+    ],
+    "2c2cf8d41147a780b466b7b5f2a8e7c0f58e2ec42b8d807677f83e0dbf6b4892": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\nav-3.png"
+    ],
+    "d95effe345746b932dfa4b62217dea6befeecb29c8577f44575fc68324edc002": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\new.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7762F58E-D025-47A4-8523-9AE7ED98318F\\Images\\new.png"
+    ],
+    "1996406777c497db635de6f07fdf4159923cfe1f05a961bb05b5018dcd0ee6b2": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-0.png"
+    ],
+    "9c6243fb790f5e18b2118d2134011b8b68161c34b53d237cd41b0f94243fa1dc": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-1.png"
+    ],
+    "b26b45573cbc2c0c775f5f3085165669630371034b200055e7f2a3db8aad8475": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-2.png"
+    ],
+    "4d39f0cc60eda8844f32cbe5e95a7bcd21df566b5ddcede283316f57c907fbff": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-3.png"
+    ],
+    "35c490a7a3ad0feedebabcea72ee334121839d6bd7a9a930a4fb8bdbed43cefd": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-4.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\app-4.png"
+    ],
+    "98beeafc9f05228db4b12c0de2a53f8f1193ac6c5dcd4c0af9303d5362d336b0": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-0.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-1.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-2.png"
+    ],
+    "c7c5089598a48472bf1a1bdd5f0cca629ca82f8a531d863a118ba180a85c6b8d": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-3.png"
+    ],
+    "bbf106003cd916b656ac6a86df10b71a679a3f52376af7ea53dc708df312e37d": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-4.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\custom-4.png"
+    ],
+    "2cf2cdd6da5a8998006d060f4f8733687589af11a4d489ad9047875dae1af5a3": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-1.png"
+    ],
+    "c0d6bff56ff3fa5b3c0c591782c8e38303bd71db496f9c3f044003ba18f7dfe1": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-2.png"
+    ],
+    "a0c5961b25127d3530f2d2f23bade8a713d4f4a179f6e6cd78deedbd11c2efab": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\89125BE3-C047-4CF1-B885-E2CC416363C0\\Images\\nav-3.png"
+    ],
+    "0f18a08f82b438ae7dbb118c0155cd28b1232c9789f0ea50d1dbf32dd85ffd04": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-1.png"
+    ],
+    "6414a3a88d9ae2083920f970b277001fe6081e661b03585c2fdd1c1f04844f86": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\9D453F67-39DD-4CE3-9B78-02DD4AF9D252\\Images\\nav-2.png"
+    ],
+    "6bf61ccfa0dbd6942396e11948f053313500f868c1672233111c5ab25a2da83c": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-0.png"
+    ],
+    "b6a820bcbe19197fe2322f68776cab30b2705f36d2b3199fa3ba29d219559a43": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-1.png"
+    ],
+    "5b6dbaa26ab297b423b11555cb924008f6541483a1332cfda53bbbe15919f696": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-2.png"
+    ],
+    "6e69c449bb6af0fd92916dadcdd030ec18659d92f881576e7b33da688a85ddf6": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-3.png"
+    ],
+    "e6ddf6ccbe410d53feef270b128ff1a40cc043e88f96fe7419ff3d5bbe513776": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-4.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\app-4.png"
+    ],
+    "b4fb95c1d8b94c5dd4262600ce583a490127d03ba76a6273d5a4144dc13a9b34": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-0.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-1.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-2.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-3.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-4.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\custom-4.png"
+    ],
+    "13cc25aa81d85e6266596f33e4daf0719257ada3eb6b5a239d49af1f7dd605aa": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-0.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-0.png"
+    ],
+    "50002b204b9a554b529cd768625858003ed410dbb3b42876cf2bca75edf36812": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-1.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-1.png"
+    ],
+    "ef896063956765f5c76eef90336871e69f68bd40d42f7cfb584278f921bdc173": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-2.png"
+    ],
+    "253d6009123a52320e71ef1d59092b5a1498e8add87efd29b9964382c9307ef3": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9E1BD52-F1CC-4C6B-A301-D996D804E41B\\Images\\nav-3.png"
+    ],
+    "15413bd39c0a84bdecbf4a6618b0ce7203eb4393dad64e8c6d006f2d7b19176a": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-0.png"
+    ],
+    "41ccff7dd258a86ea0ac2367149fb12a97e3a6a8770e44a88d1b6a3a34e8f119": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-1.png"
+    ],
+    "1cd3c34f585d9f05a005dfdc8a78d01d24e83c0b6de6d22d18e69078f3aee216": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-3.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\A9F76E3E-8C3E-4A97-8407-728C1A9721D3\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-3.png"
+    ],
+    "eaea3e015eec4fb3f05b0c266b79bf7a5ca50247c52f0b464a259f640ed1d675": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-0.png"
+    ],
+    "c82af40b9e383244952dd6e757960e277a2527107e1a35fbe3db3280acd63727": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-1.png"
+    ],
+    "5bb718f2c94a36964e4e941695e8597086716dadbf7c2229b0d214f642681356": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-2.png"
+    ],
+    "84ef6a258c721b0508dd16c4157e75b88eba787a01fa892fd2b82e0d48f5a5e4": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\nav-3.png"
+    ],
+    "46c230b7bd031c99fd7dc220596068f71c08e3c31fb52b1ca0bf6bd463ad6da1": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\new.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\B0A6E455-8A58-415B-B5DB-ED1654AF0AD8\\Images\\new.png"
+    ],
+    "46e684739b45545abc181b7ec69fd8be4eee8e7f9e477dd9705fda4d3a5161b8": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\nav-2.png"
+    ],
+    "4a1996c8bb8be168c102c5cff868d65c09178c79fbf7b3aceaa01d5335ff23f6": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\new.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\CEF6CDF4-78DB-4DC1-B846-2187F549DACC\\Images\\new.png"
+    ],
+    "57fc8fcf32dfed931b554edb11454b5fa23161ab64bea930f686441b42d743a6": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-0.png"
+    ],
+    "3f2a4d185dfef54ff40f22b036c97be03a0f32d725d15d33379218c325fee8f9": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-1.png"
+    ],
+    "0b298f87f7f282a592e5f585b612f59bf4555fec2b0bf4e56b35dec641f99028": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-2.png"
+    ],
+    "d397bcf35babd24a4e74f29872a18b7e944999549ae43d79469b6601ad8c2c45": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-3.png"
+    ],
+    "ae75c946b0ea8ae938738d20e785980fe86c1e3d33e7b0bae3b228e05f286ecf": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-4.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\app-4.png"
+    ],
+    "6ba89f8b8f267bff98ffbb80b25e7a112de866155bbdd941fe8aca69714d16c0": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-0.png"
+    ],
+    "7dd538fea9434910c1651e917c68af51749d89aaabff0d4dd757b028a00bfb09": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-1.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-2.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-3.png",
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-4.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\custom-4.png"
+    ],
+    "2602fd352ae9bc49747eca380b536da999c4e15bae7e111150fde43569476c61": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-0.png"
+    ],
+    "4e045631a3193dae753815442830e2960fffe423994cd822a5a1e51759a0c274": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-1.png"
+    ],
+    "e852caaebae95e5fbbd0f5ec2a76d133f83223f68734a50fa03cf220f8b98c95": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-2.png"
+    ],
+    "91a8e496fee9ab29e7a1e07a6d82ad36f319e4be0eb44e49a41207edf7fec399": [
+      "Kadea-Deck-0.6.0-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-3.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\ECB4064E-174B-4668-A5A7-91943DA3FB74\\Images\\nav-3.png"
+    ],
+    "0e3925a43a5c0030084300cef651e6e7b07f75436aa9e51a3f2dbd99367f5a20": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\app-0.png"
+    ],
+    "3b7032f8f5f855260ffedbd8c992c2bdd92fddb451783e8954525a3ca5553fed": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\app-1.png"
+    ],
+    "417fbe1991595529601cd55f6a474bb574620c86286b29d3c00a053d4dffdc57": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\app-2.png"
+    ],
+    "2b9a316948b32885b913dea8f130ee37fb9de311f12cdfbc87866579092f36e5": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\app-3.png"
+    ],
+    "4ac247ba90a4b28716eb3b58d8c9210c9779b69fa38f8802c615c2ad82972818": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\app-4.png"
+    ],
+    "3f276a03318366d47bb1599c12e0c8ff381093f667af6f7566d94dc1825ef446": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\custom-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\custom-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\custom-2.png"
+    ],
+    "07e7c23054790c7fe1d4345574711c44006604fb327fc4a969d4a77ddaf323bc": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\custom-3.png"
+    ],
+    "aae4e6b25266f1449d89f88b0c39a8b285d2cd058b804f5f11c316695de2ecce": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\custom-4.png"
+    ],
+    "e6fd6dee49be2970b94b75bffb9126167ec6495ce6fde19c8430908a7a32db8a": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\nav-0.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\41464800-8FC6-4AB0-834D-3DA90C8D1955\\Images\\nav-0.png"
+    ],
+    "7a653176fcd0e0f987cc53bf5069552a8e78c8a8975f7938992d3a253f4ea04a": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\nav-1.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\41464800-8FC6-4AB0-834D-3DA90C8D1955\\Images\\nav-1.png"
+    ],
+    "c18bb288172a6d3884754ae67ad47c13aeead1f317c2af935455cf70c5551ee9": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\nav-2.png"
+    ],
+    "288e30c6da181670def3774e8043110fc027849bfd71e2ec999385fe768bb9e2": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\38076AE9-BEC7-4A78-BDEC-04A292FF703B\\Images\\nav-3.png"
+    ],
+    "cd51f479b61566daa8472c087d1961a08028fb75836acda1baf0de4a3805e653": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\41464800-8FC6-4AB0-834D-3DA90C8D1955\\Images\\nav-2.png"
+    ],
+    "ee6a45ff90835f9e54f444b32fe9f5b677e821545288cd348d0b2249a14d47b9": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\41464800-8FC6-4AB0-834D-3DA90C8D1955\\Images\\nav-3.png"
+    ],
+    "e1dfebfa4192f4a4c17341fa0a326051f1a0e54820b31299778f703b8a83bcf4": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\41464800-8FC6-4AB0-834D-3DA90C8D1955\\Images\\new.png"
+    ],
+    "51599cf08b4d019372af718cf2c67c5881bb23547207704de393a2966eed325b": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7875630A-12A5-4294-88E0-6A8E39BFF44B\\Images\\nav-0.png"
+    ],
+    "1768015e2504a8ad780de270e161bbf2532d76cc37d0b2dfe4bd5d78c88ba119": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7875630A-12A5-4294-88E0-6A8E39BFF44B\\Images\\nav-1.png"
+    ],
+    "2ed0e6500009a83ec21680ae8d2df915c50a683447de896e1733678d692e3b99": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7875630A-12A5-4294-88E0-6A8E39BFF44B\\Images\\nav-2.png",
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\FF6505E4-9E3F-4F39-A0D5-7F9D5B744F4E\\Images\\nav-2.png"
+    ],
+    "e9295694088777e2a449ba8d2060a3db0a175ed909863afdb498bcc4109477a4": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7875630A-12A5-4294-88E0-6A8E39BFF44B\\Images\\nav-3.png"
+    ],
+    "30080fde98364f91846c68f8775ca41aecb1ea89714fb476819fe77ce7eac9a5": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\7875630A-12A5-4294-88E0-6A8E39BFF44B\\Images\\new.png"
+    ],
+    "4dae0514ab0bd70974862feb88a0256f309d6d3fb6611925e0c47798584f59b7": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\FF6505E4-9E3F-4F39-A0D5-7F9D5B744F4E\\Images\\nav-0.png"
+    ],
+    "3fa8e43c47fa8f33ed1dbd88350ec96cba173e0441f85d1dd3c72602355d4677": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\FF6505E4-9E3F-4F39-A0D5-7F9D5B744F4E\\Images\\nav-1.png"
+    ],
+    "711381d211433526e938bd048cd71cbede7f9d262ba3f07004bf808cc9a318b3": [
+      "Cardea-Deck-0.6.1-windows.zip|profile-template\\83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile\\Profiles\\FF6505E4-9E3F-4F39-A0D5-7F9D5B744F4E\\Images\\nav-3.png"
+    ]
+  }
+}

@@ -10,7 +10,7 @@ Approvals require the selected exact supported request. Ambiguous send outcomes 
 
 Setup modifies only its own plugin/profile plus its own entries in Claude settings. It checks changed settings and refuses junction-based development installs. Local backups can contain the user's original settings and must stay private. Download hashes detect corruption; they are not a code-signing certificate.
 
-## Dependencies at 0.6.0
+## Runtime dependencies
 
 The SDK's transitive Zod version is pinned to 4.6.6 for [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). The SDK uses the `zod/v4-mini` API; the bundled real-SDK tests are run with this override. Production dependency audit has no known vulnerabilities at preparation time.
 

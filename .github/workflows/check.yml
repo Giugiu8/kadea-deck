@@ -25,5 +25,5 @@ jobs:
       - run: node build.mjs
       - run: node --test tests/*.test.mjs
       - run: node profile.mjs
-      - run: node node_modules/@elgato/cli/bin/streamdeck.mjs validate dist/de.cardea.kadeadeck.sdPlugin
+      - run: node node_modules/@elgato/cli/bin/streamdeck.mjs validate dist/de.cardea.deck.sdPlugin
       - run: npm audit --omit=dev --audit-level=high

@@ -92,7 +92,7 @@ test('Codex opener accepts only fixed composer or thread links',()=>{
  for(const url of ['codex://threads/x?prompt=send','codex://threads/../x','https://example.com','cmd.exe'])assert.equal(allowedUrl(url),false);
 });
 test('approval attempt ledger survives owner change and a plugin restart',async()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-ledger-')),file=path.join(dir,'attempts.json');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-ledger-')),file=path.join(dir,'attempts.json');
  try{
   const first=fixture({ledgerFile:file,recordAttempts:null});let sent=0;first.pipe.request=async()=>{sent++;throw Error('timeout');};
   assert.equal(await first.store.act(first.store.snapshot(),'accept'),false);assert.equal(sent,1);
@@ -100,7 +100,7 @@ test('approval attempt ledger survives owner change and a plugin restart',async(
   const second=fixture({ledgerFile:file,recordAttempts:null});assert.equal(second.store.persistenceOk,true);assert.equal(second.store.get().approval,null);
   assert.equal(await second.store.act(second.store.snapshot(),'decline'),false);assert.equal(second.pipe.calls.length,0);
   const saved=JSON.parse(fs.readFileSync(file,'utf8'));assert.equal(saved.attempts.length,1);assert.match(saved.attempts[0],/^[a-f0-9]{64}$/);assert.ok(!fs.readFileSync(file,'utf8').includes('r1'));
- }finally{assert.equal(path.dirname(dir),os.tmpdir());assert.ok(path.basename(dir).startsWith('kadea-ledger-'));fs.rmSync(dir,{recursive:true,force:true});}
+ }finally{assert.equal(path.dirname(dir),os.tmpdir());assert.ok(path.basename(dir).startsWith('cardea-ledger-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('approval persistence failure sends nothing',async()=>{
  const {store,pipe}=fixture({recordAttempts:()=>false});assert.equal(await store.act(store.snapshot(),'accept'),false);assert.equal(pipe.calls.length,0);assert.equal(store.persistenceOk,false);

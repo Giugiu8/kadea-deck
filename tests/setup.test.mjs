@@ -10,14 +10,14 @@ import {createPlan,applyPlan,uninstall,verifyBundle} from '../setup.mjs';
 const write=(file,value)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,typeof value==='string'?value:JSON.stringify(value));};
 const read=file=>JSON.parse(fs.readFileSync(file,'utf8'));
 const foreign={env:{CUSTOM_SETTING:'fixture'},hooks:{PreToolUse:[{matcher:'Read',hooks:[{type:'command',command:'echo custom-hook'}]}]},statusLine:{type:'command',command:'echo custom-status'}};
-function fixture(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kadea-setup-'));try{
+function fixture(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-setup-'));try{
  const home=path.join(dir,'user'),appData=path.join(home,'AppData/Roaming'),directory=path.join(dir,'download'),settings=path.join(home,'.claude/settings.json');write(settings,foreign);
  const profile=profileTemplate();const base=path.join(directory,'profile-template',profileId);write(path.join(base,'manifest.json'),profile.manifest);profile.pages.forEach((p,i)=>write(path.join(base,'Profiles',profile.ids[i],'manifest.json'),p));write(path.join(base,'Profiles',profile.manifest.Pages.Default,'manifest.json'),{Controllers:[{Type:'Keypad',Actions:{}}]});
- const plugin=path.join(directory,'de.cardea.kadeadeck.sdPlugin');write(path.join(plugin,'manifest.json'),{UUID:'de.cardea.kadeadeck',Version:'0.6.0.0'});write(path.join(plugin,'bin/plugin.mjs'),'// fixture');write(path.join(plugin,'hooks/bridge.cjs'),'// fixture');write(path.join(plugin,'hooks/statusline.cjs'),'// fixture');
+ const plugin=path.join(directory,'de.cardea.deck.sdPlugin');write(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck',Version:'0.7.0.0'});write(path.join(plugin,'bin/plugin.mjs'),'// fixture');write(path.join(plugin,'hooks/bridge.cjs'),'// fixture');write(path.join(plugin,'hooks/statusline.cjs'),'// fixture');
  write(path.join(appData,'Elgato/StreamDeck/ProfilesV3/existing.sdProfile/manifest.json'),{Device:{Model:'20GBA9901',UUID:'fixture-device'}});
- const files={};function walk(root){for(const e of fs.readdirSync(root,{withFileTypes:true})){const file=path.join(root,e.name);if(e.isDirectory())walk(file);else files[path.relative(directory,file).replaceAll('\\','/')]=createHash('sha256').update(fs.readFileSync(file)).digest('hex');}}walk(directory);write(path.join(directory,'integrity.json'),{schema:1,version:'0.6.0',files});
+ const files={};function walk(root){for(const e of fs.readdirSync(root,{withFileTypes:true})){const file=path.join(root,e.name);if(e.isDirectory())walk(file);else files[path.relative(directory,file).replaceAll('\\','/')]=createHash('sha256').update(fs.readFileSync(file)).digest('hex');}}walk(directory);write(path.join(directory,'integrity.json'),{schema:1,version:'0.7.0',files});
  return fn({dir,home,appData,directory,settings,plan:()=>createPlan({directory,home,appData})});
- }finally{assert.equal(path.dirname(dir),os.tmpdir());assert.ok(path.basename(dir).startsWith('kadea-setup-'));fs.rmSync(dir,{recursive:true,force:true});}}
+ }finally{assert.equal(path.dirname(dir),os.tmpdir());assert.ok(path.basename(dir).startsWith('cardea-setup-'));fs.rmSync(dir,{recursive:true,force:true});}}
 test('portable profile has 60 distinct actions, four pages, separate empty pinned default and Claude/Codex navigation',()=>{
  const p=profileTemplate();assert.equal(p.pages.length,4);assert.equal(p.manifest.Device.UUID,'');assert.ok(!p.ids.includes(p.manifest.Pages.Default));
  const actions=p.pages.flatMap(page=>Object.values(page.Controllers[0].Actions));assert.equal(actions.length,60);assert.equal(new Set(actions.map(a=>a.ActionID)).size,60);
@@ -25,13 +25,13 @@ test('portable profile has 60 distinct actions, four pages, separate empty pinne
  assert.ok(!JSON.stringify(p).includes('Discord'));assert.equal(p.pages[0].Name,'Claude');assert.equal(p.pages[1].Name,'Codex');
 });
 test('hook merge is idempotent, preserves foreign settings/status line and removes only our entries',()=>{
- const plugin=path.join(os.tmpdir(),'plugins/de.cardea.kadeadeck.sdPlugin'),options={node:process.execPath,plugin};const once=mergeHooks(foreign,options),twice=mergeHooks(once,options);
+ const plugin=path.join(os.tmpdir(),'plugins/de.cardea.deck.sdPlugin'),options={node:process.execPath,plugin};const once=mergeHooks(foreign,options),twice=mergeHooks(once,options);
  assert.deepEqual(twice,once);assert.deepEqual(once.statusLine,foreign.statusLine);assert.deepEqual(once.env,foreign.env);assert.equal(Object.values(once.hooks).flatMap(g=>g.flatMap(x=>x.hooks)).filter(h=>owned(h.command)).length,events.length);
  assert.deepEqual(mergeHooks(twice,{remove:true}),foreign);assert.throws(()=>mergeHooks({}, {...options,node:'C:\\bad%PATH%\\node.exe'}),/Unsupported/);
 });
 test('fresh setup plan changes nothing; install binds local device and uninstall preserves foreign settings and user state',()=>fixture(f=>{
  const plan=f.plan(),calls=[];assert.equal(fs.existsSync(plan.plugin),false);assert.deepEqual(read(f.settings),foreign);
- applyPlan(plan,{host:mode=>calls.push(mode)});assert.deepEqual(calls,['Stop','Start']);assert.equal(read(path.join(plan.profile,'manifest.json')).Device.UUID,'fixture-device');assert.equal(read(path.join(plan.runtime,'install.json')).version,'0.6.0');
+ applyPlan(plan,{host:mode=>calls.push(mode)});assert.deepEqual(calls,['Stop','Start']);assert.equal(read(path.join(plan.profile,'manifest.json')).Device.UUID,'fixture-device');assert.equal(read(path.join(plan.runtime,'install.json')).version,'0.7.0');
  write(path.join(plan.runtime,'state.json'),{schema:1,sessions:[]});const settings=read(f.settings);settings.env.ADDED_AFTER_INSTALL='keep';write(f.settings,settings);
  const archive=uninstall({...f,host:mode=>calls.push(mode)});assert.ok(fs.existsSync(archive));assert.equal(fs.existsSync(plan.plugin),false);assert.equal(fs.existsSync(plan.profile),false);assert.equal(fs.existsSync(path.join(plan.runtime,'state.json')),true);assert.equal(read(f.settings).env.ADDED_AFTER_INSTALL,'keep');assert.deepEqual(read(f.settings).hooks,foreign.hooks);assert.deepEqual(read(f.settings).statusLine,foreign.statusLine);
 }));
@@ -77,5 +77,5 @@ test('a failed uninstall backup does not mask its error or strand an earlier ret
  assert.deepEqual(read(f.settings),before);for(const target of [p.plugin,p.profile,p.receipt])assert.ok(fs.existsSync(target));assert.deepEqual(calls,['Stop','Start']);assert.equal(fs.existsSync(path.join(p.runtime,'install.lock')),false);
 }));
 test('branding upgrade renames only the original profile title and preserves custom titles and Apps',()=>fixture(f=>{
- const p=f.plan();applyPlan(p);const file=path.join(p.profile,'manifest.json'),top=read(file);top.Name='Kadea Deck';write(file,top);applyPlan(f.plan());assert.equal(read(file).Name,'Cardea Deck');const custom=read(file);custom.Name='My Work Deck';write(file,custom);applyPlan(f.plan());assert.equal(read(file).Name,'My Work Deck');
+ const p=f.plan();applyPlan(p);const file=path.join(p.profile,'manifest.json'),top=read(file);top.Name='Cardea Deck';write(file,top);applyPlan(f.plan());assert.equal(read(file).Name,'Cardea Deck');const custom=read(file);custom.Name='My Work Deck';write(file,custom);applyPlan(f.plan());assert.equal(read(file).Name,'My Work Deck');
 }));

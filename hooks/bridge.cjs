@@ -16,7 +16,7 @@ process.stdin.on('end',()=>{
     // No prompt, transcript, tool input, output, credential or conversation history is retained/sent.
     const data=quota?raw.rate_limits:{event,at,eventId,sessionId:raw.session_id,cwd:raw.cwd,tool:raw.tool_name,toolUseId:raw.tool_use_id,notificationType:raw.notification_type,source:raw.source};
     const body=JSON.stringify(data??{});
-    const req=http.request({host:'127.0.0.1',port:c.port,path:quota?'/quota':permission?'/permission':'/event',method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'X-Kadea-Token':c.token}},res=>{
+    const req=http.request({host:'127.0.0.1',port:c.port,path:quota?'/quota':permission?'/permission':'/event',method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'X-Cardea-Token':c.token}},res=>{
       let result='',bytes=0;res.on('data',b=>{bytes+=b.length;if(bytes<=8192)result+=b;});
       res.on('end',()=>{if(permission&&res.statusCode===200&&bytes<=8192){try{const d=JSON.parse(result);if(d.hookSpecificOutput?.hookEventName==='PermissionRequest'&&['allow','deny'].includes(d.hookSpecificOutput?.decision?.behavior))process.stdout.write(JSON.stringify(d));}catch{}}process.exit(0);});
     });

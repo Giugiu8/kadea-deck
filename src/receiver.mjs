@@ -8,7 +8,7 @@ export async function startReceiver(store,{directory,timeoutMs,getDiagnostics=()
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');
     if(req.url==='/health'&&req.method==='GET'){res.end('{"app":"Cardea Deck","schema":1}');return;}
-    const key=req.headers['x-kadea-token'];
+    const key=req.headers['x-cardea-token'];
     if(req.headers.origin||typeof key!=='string'||!/^[a-f0-9]{64}$/.test(key)||!timingSafeEqual(Buffer.from(key),Buffer.from(token))){res.writeHead(403).end('{}');return;}
     if(req.url==='/status'&&req.method==='GET'){res.end(JSON.stringify({schema:1,sourceHasEvents:store.connected,sessionCount:store.sessions.size,pendingRequests:broker.pending.size,persistenceOk:!store.persistenceError,...getDiagnostics()}));return;}
     if(req.method!=='POST'||!['/event','/permission','/quota'].includes(req.url)){res.writeHead(404).end('{}');return;}
