@@ -94,6 +94,8 @@ store.on('change',paint);setInterval(paint,1000).unref();
 let scanning=false,lastScan=0;async function refresh(){if(scanning||Date.now()-lastScan<5000)return;scanning=true;lastScan=Date.now();try{for(const root of metadataRoots())await refreshDesktopMetadata(store,root);}finally{scanning=false;}}
 setInterval(refresh,30_000).unref();store.on('change',()=>{if(!scanning)void refresh();});
 void refresh();
-process.on('SIGTERM',()=>{receiver.broker.close();codex?.close();process.exit(0);});
-process.on('uncaughtException',()=>{streamDeck.logger.error('Cardea Deck: unexpected error; no approval granted.');receiver.broker.close();codex?.close();process.exit(1);});
+function shutdown(){receiver.removeConnection();receiver.broker.close();codex?.close();}
+process.on('SIGTERM',()=>{shutdown();process.exit(0);});
+process.on('exit',()=>receiver.removeConnection());
+process.on('uncaughtException',()=>{streamDeck.logger.error('Cardea Deck: unexpected error; no approval granted.');shutdown();process.exit(1);});
 streamDeck.connect();

@@ -11,7 +11,7 @@ try{
  const plugin='de.cardea.deck.sdPlugin';
  // A development build may be running on this PC. Never package its logs or
  // diagnostic files: include only the known build outputs.
- const pluginFiles=['manifest.json','package.json','bin/plugin.mjs','bin/open.exe','hooks/bridge.cjs','hooks/runtime.cjs','hooks/statusline.cjs','pi/index.html','imgs/key.png','imgs/key@2x.png','imgs/plugin.png','imgs/plugin@2x.png'];
+ const pluginFiles=['manifest.json','package.json','bin/plugin.mjs','bin/open.exe','hooks/bridge.cjs','hooks/runtime.cjs','hooks/statusline.cjs','hooks/permission-auth.cjs','hooks/receiver-client.cjs','pi/index.html','imgs/key.png','imgs/key@2x.png','imgs/plugin.png','imgs/plugin@2x.png'];
  for(const rel of pluginFiles){const destination=path.join(bundle,plugin,rel);fs.mkdirSync(path.dirname(destination),{recursive:true});fs.copyFileSync(path.join(root,'dist',plugin,rel),destination);}
  fs.cpSync(path.join(root,'dist/profile-template'),path.join(bundle,'profile-template'),{recursive:true});
  const files=['setup.mjs','setup-hooks.mjs','migration.mjs','migration-artwork.json','Setup.ps1','Uninstall.ps1','host.ps1','Doctor.ps1','doctor.mjs','Install.cmd','Uninstall.cmd','LICENSE','README.md','SECURITY.md','CHANGELOG.md'];

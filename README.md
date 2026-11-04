@@ -41,6 +41,8 @@ Same positions for both providers. Six chats per page. Navigation stays **Claude
 
 No cloud telemetry or account keys required by Cardea Deck. Setup preserves existing Claude hooks and custom status lines; local state stays on its PC. [Privacy and limitations](#privacy-and-limitations).
 
+**Security notice:** The published `v0.7.0-beta.1` Windows release has a Claude permission-response impersonation flaw. Keep Cardea's `PermissionRequest` hook disabled on unpatched installations. The fix in this working tree is an unreleased 0.7.1 candidate; update both the plugin and bundled hooks together. See [SECURITY.md](SECURITY.md).
+
 ## Quick start
 
 1. Download **Cardea-Deck-0.7.0-windows.zip** from [Releases](https://github.com/Giugiu8/cardea-deck/releases), then extract the entire archive to a permanent folder.
@@ -83,7 +85,7 @@ Claude usage is shown only when real `rate_limits` arrive through our status lin
 ## Privacy and limitations
 
 - Local metadata only. Claude hooks drop prompts, tool arguments, outputs and transcript paths. The Codex desktop pipe sends full state frames; our bounded streaming parser discards history/tool arguments while reading and retains only selected metadata. No transcript logging or cloud telemetry.
-- Metadata and the random per-start loopback connection token live under `%USERPROFILE%/.cardeadeck`. This directory stays on its PC. Other applications under the same Windows user are inside the local trust boundary.
+- Metadata, the random per-start loopback connection token and the separate receiver identity key live under `%USERPROFILE%/.cardeadeck`. This directory stays on its PC. In the 0.7.1 candidate, hooks authenticate the receiver before sending metadata and verify each permission response. Other applications under the same Windows user are inside the local trust boundary.
 - The Codex desktop pipe is not a publicly stable API. Observed stream version: 11; unknown newer versions fail closed. Desktop updates can require maintenance or rerunning Setup to refresh the bundled executable path.
 - Hook collection is not proof of every open Claude chat. Desktop deep links can change. No Gemini, macOS/Linux support, remote PC control or full Micro/VibeDeck feature parity is promised.
 - The private predecessor was tested on a real MK.2, including chat switching, Claude new chat and Codex dictation. The original PC now runs 0.7.0 with a healthy collector after migration. The portable installer is tested in isolated fresh-profile fixtures; a second physical PC remains an independent installation test. Real approval/stop hardware coverage is limited. See [release validation](docs/VALIDATION.md).

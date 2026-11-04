@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 — Unreleased
+
+### Security
+- Authenticate Claude permission responses using a separate per-start key and a fresh request challenge. A substitute process on an abandoned receiver port can no longer return an unsigned approval. Replayed or modified responses leave the decision in Claude.
+- Refuse permission transport through legacy connection files without the response key. Update both the plugin and its bundled hooks together and restart Stream Deck.
+- Prove the receiver's identity before sending hook metadata, keep the proven TCP connection, and enforce an absolute identity-check deadline. Connection schema 2 also makes old hooks refuse the new connection file. Clear only the receiver's own connection file on orderly shutdown, and keep partial hook installations silent.
+- Doctor uses the authenticated client and reports whether the receiver was authenticated without printing either key.
+
 ## 0.7.0 — 2026-11-02
 
 - Use **Cardea Deck** throughout, including plugin identity `de.cardea.deck`, local directory `.cardeadeck`, and `CARDEA_DECK_HOME`.

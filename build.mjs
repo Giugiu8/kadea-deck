@@ -17,6 +17,8 @@ execFileSync(path.join(process.env.WINDIR||'C:/Windows','Microsoft.NET/Framework
 fs.copyFileSync(path.join(root,'hooks/bridge.cjs'),path.join(out,'hooks/bridge.cjs'));
 fs.copyFileSync(path.join(root,'hooks/statusline.cjs'),path.join(out,'hooks/statusline.cjs'));
 fs.copyFileSync(path.join(root,'hooks/runtime.cjs'),path.join(out,'hooks/runtime.cjs'));
+fs.copyFileSync(path.join(root,'hooks/permission-auth.cjs'),path.join(out,'hooks/permission-auth.cjs'));
+fs.copyFileSync(path.join(root,'hooks/receiver-client.cjs'),path.join(out,'hooks/receiver-client.cjs'));
 const {cardSvg}=await import('./src/cards.mjs');
 const svg=path.join(root,'dist/card-source.svg');fs.writeFileSync(svg,cardSvg({kind:'nav',title:'Cardea',icon:'start',active:true}));
 execFileSync('magick',[svg,path.join(out,'imgs/key.png')],{windowsHide:true});

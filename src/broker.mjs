@@ -5,11 +5,11 @@ export class PermissionBroker {
     this.onChange=()=>{for(const [id,p]of this.pending){const s=store.get(p.sessionId);if(!s||s.ended||s.turn!==p.turn||s.requestId!==id)this.finish(id,null);}};
     store.on('change',this.onChange);
   }
-  hold(sessionId,response){
-    const s=this.store.get(sessionId);if(!s||s.state==='ended'){response.end('{}');return null;}
+  hold(sessionId,response,send=answer=>response.end(JSON.stringify(answer))){
+    const s=this.store.get(sessionId);if(!s||s.state==='ended'){send({});return null;}
     // A newer request retires the old held transport, never answers it implicitly.
     for(const [id,p]of this.pending)if(p.sessionId===sessionId)this.finish(id,null);
-    const id=randomUUID(),p={id,sessionId,turn:s.turn,tool:s.tool,response,expires:this.clock()+this.timeoutMs};
+    const id=randomUUID(),p={id,sessionId,turn:s.turn,tool:s.tool,response,send,expires:this.clock()+this.timeoutMs};
     this.pending.set(id,p);this.store.beginPermission(sessionId,id,p.tool);
     p.timer=setTimeout(()=>this.finish(id,null),this.timeoutMs);p.timer.unref();
     response.once('close',()=>this.finish(id,null));return id;
@@ -26,7 +26,7 @@ export class PermissionBroker {
     const valid=current&&current.turn===p.turn&&current.requestId===id&&current.state!=='ended';
     const answer=valid&&decision?{hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:decision,...(decision==='deny'?{message:'In Cardea Deck abgelehnt.'}:{})}}}:{};
     if(valid)this.store.finishPermission(p.sessionId,id,decision);
-    if(!p.response.destroyed&&!p.response.writableEnded)p.response.end(JSON.stringify(answer));
+    if(!p.response.destroyed&&!p.response.writableEnded)p.send(answer);
   }
   close(){this.store.off('change',this.onChange);for(const id of [...this.pending.keys()])this.finish(id,null);}
 }

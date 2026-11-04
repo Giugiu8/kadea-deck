@@ -56,17 +56,23 @@ test('built plugin registers with the real SDK and renders live receiver events 
   press('test-key',0);
   await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='test-key'));
   const post=(route,event,extra={})=>fetch(base+route,{method:'POST',headers,body:JSON.stringify({event,sessionId:'sdk-fixture',eventId:`sdk-${++seq}`,at:Date.now(),cwd:'G:\\TestProject',...extra})});let seq=0;
+  const permission=tool=>{
+   const hook=spawn(process.execPath,[path.join(root,'dist/de.cardea.deck.sdPlugin/hooks/bridge.cjs'),'PermissionRequest'],{env:{...process.env,CARDEA_DECK_HOME:path.join(dir,'.cardeadeck')},windowsHide:true,stdio:['pipe','pipe','pipe']});
+   let output='',errors='';hook.stdout.on('data',b=>output+=b);hook.stderr.on('data',b=>errors+=b);
+   const ended=once(hook,'close');hook.stdin.end(JSON.stringify({session_id:'sdk-fixture',tool_name:tool,cwd:'G:\\TestProject'}));
+   return ended.then(([code])=>{assert.equal(code,0,errors);assert.equal(errors,'');return output?JSON.parse(output):{};});
+  };
   socket.send(JSON.stringify({event:'willAppear',action:'de.cardea.deck.permission',context:'approve-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:1,row:0},isInMultiAction:false,settings:{decision:'allow'},state:0}}));
-  const first=post('/permission','PermissionRequest',{tool:'Bash'});
+  const first=permission('Bash');
   await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('Bash')));
   const key=event=>socket.send(JSON.stringify({event,action:'de.cardea.deck.permission',context:'approve-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:1,row:0},isInMultiAction:false,settings:{decision:'allow'},state:0}}));
   key('keyDown');await new Promise(r=>setTimeout(r,15));
-  await post('/event','UserPromptSubmit');assert.deepEqual(await(await first).json(),{});
-  const next=post('/permission','PermissionRequest',{tool:'Read'});
+  await post('/event','UserPromptSubmit');assert.deepEqual(await first,{});
+  const next=permission('Read');
   await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('Read')));
   key('keyUp');await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='approve-key'));
   assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,1);
-  key('keyDown');key('keyUp');assert.equal((await(await next).json()).hookSpecificOutput.decision.behavior,'allow');
+  key('keyDown');key('keyUp');assert.equal((await next).hookSpecificOutput.decision.behavior,'allow');
   // Without a configured Codex source, its permission key must fail closed;
   // an empty chat key may still open only the fixed new-composer route.
   const codexKey=(kind,context,event,settings={})=>socket.send(JSON.stringify({event,action:`de.cardea.deck.codex-${kind}`,context,device:'test-device',payload:{controller:'Keypad',coordinates:{column:0,row:1},isInMultiAction:false,settings,state:0}}));

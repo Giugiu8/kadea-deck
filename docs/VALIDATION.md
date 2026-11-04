@@ -1,5 +1,9 @@
 # Validation scope
 
+The unreleased 0.7.1 candidate adds an actual receiver-subprocess crash and abandoned-port takeover fixture, response-authentication/replay/tampering tests against source and built hooks, per-start key rotation and legacy-key refusal. Identity tests cover metadata withholding, socket replacement after a valid identity proof, a trickling peer and a missing packaged helper. The SDK fixture sends a real built hook through the bundled receiver and an exact simulated Stream Deck key press. These tests never approve a real Claude action. Cross-Windows-account exploitation and a physical approval-button pass remain separate outstanding checks.
+
+On 2026-11-04 the candidate passed 119 tests under the source-build Node.js runtime and all 119 under Stream Deck's bundled Node.js 20.20.2. Claude Opus 5.5 at high effort reviewed two iterations through the CLI, independently ran the then-current 118-test suite, and found no remaining blocking security issue in the second iteration. A subsequent Doctor regression brings the local total to 119. The ZIP passes isolated fresh install, upgrade and uninstall plus the official Elgato validator. These checks do not establish performance on a separate work PC.
+
 The private predecessor was used on a real Windows Stream Deck MK.2. Its user confirmed provider navigation, the correct Claude chat, a blank Claude composer, the correct working Codex chat and Codex dictation. Those confirmations are not a blanket hardware approval of all commands.
 
 The public beta retains that runtime and adds isolated coverage for:

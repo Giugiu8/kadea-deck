@@ -2,7 +2,11 @@
 
 Report vulnerabilities using GitHub's private vulnerability reporting when available. For ordinary bugs use Issues with a redacted Doctor report. Never upload credentials, connection tokens, state files or chats.
 
-This is a local, experimental desktop integration. It provides no isolation from other programs running under the same Windows account. The collector binds only loopback, uses a random per-run token, rejects browser-origin writes and does not expose an HTTP approval endpoint.
+This is a local, experimental desktop integration. It provides no isolation from other programs running under the same Windows account. The collector binds only loopback, uses a random per-run token and rejects browser-origin writes. HTTP cannot submit an approval: `/permission` holds a hook request until an exact selected Stream Deck decision or cancellation resolves it.
+
+The unreleased 0.7.1 fix authenticates the receiver before hooks send any token, event or quota metadata. A fresh challenge and HMAC-SHA256 proof use a separate per-start key that is never sent over HTTP. The subsequent request must reuse the proven TCP socket; a reconnect is refused. Permission replies carry another proof binding a fresh challenge, the request metadata, HTTP status and complete response body. Missing, modified or replayed proofs produce no hook decision. Identity checks have an absolute 900 ms deadline. The connection format is schema 2, so old hooks reject it instead of retaining the vulnerable transport. The local connection file contains both keys and must remain private; this does not protect against software that can read or change files under the same Windows account. Windows isolation relies on the directory's existing ACLs, not POSIX file mode bits.
+
+The published Windows release `v0.7.0-beta.1` does not authenticate the receiver's permission replies. After a receiver crash, a local process can reuse its abandoned port and return a forged approval to the old hook. Keep Cardea's `PermissionRequest` hook disabled on unpatched installations. Both the plugin and the hook must be updated together; restarting only an old plugin is insufficient. Cross-Windows-account exploitation has not been practically verified, and no final severity rating is claimed.
 
 Claude hooks forward only allowed metadata. Codex's local desktop pipe transmits full states; the streaming projection discards history/tool arguments and retains only bounded metadata. A missing source is unknown, never a fabricated success or inferred crash.
 
