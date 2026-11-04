@@ -2,7 +2,7 @@ param([Parameter(Mandatory=$true)][ValidateSet('Stop','Start')][string]$Mode,[st
 $ErrorActionPreference='Stop'
 $executable=Join-Path $env:ProgramFiles 'Elgato/StreamDeck/StreamDeck.exe'
 if(-not (Test-Path -LiteralPath $executable)){throw 'Install Stream Deck in its standard Windows location first'}
-if($Mode -eq 'Start') {Start-Process -FilePath $executable -WindowStyle Hidden;exit 0}
+if($Mode -eq 'Start') {Start-Process -FilePath $executable -ArgumentList '--runinbk';exit 0}
 Get-Process -Name StreamDeck -ErrorAction SilentlyContinue | ForEach-Object {$_.CloseMainWindow() | Out-Null}
 foreach($attempt in 1..30){if(-not (Get-Process -Name StreamDeck -ErrorAction SilentlyContinue)){break};Start-Sleep -Milliseconds 100}
 Stop-Process -Name StreamDeck -Force -ErrorAction SilentlyContinue
