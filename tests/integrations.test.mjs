@@ -32,3 +32,12 @@ test('unrecognized commands and non-installed plugin locations cannot write sett
  const before=fs.readFileSync(f.settings);assert.throws(()=>f.create().update('approve'),/invalid_command/);
  const elsewhere=path.join(f.dir,'de.cardea.deck.sdPlugin');fs.cpSync(f.plugin,elsewhere,{recursive:true});assert.throws(()=>f.create({plugin:elsewhere}).update('setupClaude'),/plugin_location/);assert.deepEqual(fs.readFileSync(f.settings),before);
 }));
+test('invalid UTF-8 is rejected instead of rewriting foreign settings',()=>fixture(f=>{
+ const invalid=Buffer.concat([Buffer.from('{"env":{"VALUE":"'),Buffer.from([0xff]),Buffer.from('"}}')]);fs.writeFileSync(f.settings,invalid);
+ assert.throws(()=>f.create().update('setupClaude'),/invalid_settings/);assert.deepEqual(fs.readFileSync(f.settings),invalid);
+}));
+test('custom Claude configuration does not block the independent Codex connection',()=>fixture(f=>{
+ const manager=f.create({configDir:path.join(f.dir,'custom-claude')}),before=fs.readFileSync(f.settings);
+ assert.equal(manager.status().claude,'custom_config');assert.throws(()=>manager.update('setupClaude'),/custom_config/);
+ manager.saveCodex(f.node);assert.equal(manager.codexEnabled(),true);assert.deepEqual(fs.readFileSync(f.settings),before);
+}));

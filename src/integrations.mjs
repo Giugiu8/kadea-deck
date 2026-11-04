@@ -7,17 +7,17 @@ function safePath(root,target){
  root=path.resolve(root);target=path.resolve(target);const relative=path.relative(root,target);
  if(!relative||relative==='..'||relative.startsWith('..'+path.sep)||path.isAbsolute(relative))fail('invalid_path');
  for(let current=target;;current=path.dirname(current)){
-  if(fs.existsSync(current)&&fs.lstatSync(current).isSymbolicLink())fail('linked_path');
-  if(current===root)break;if(path.dirname(current)===current)fail('invalid_path');
+  try{if(fs.lstatSync(current).isSymbolicLink())fail('linked_path');}catch(error){if(error.code!=='ENOENT')throw error;}
+  if(current.toLowerCase()===root.toLowerCase())break;if(path.dirname(current)===current)fail('invalid_path');
  }
  return target;
 }
-function parse(value){if(value===null)return{};if(value.length>2_000_000)fail('invalid_settings');try{const result=JSON.parse(value.toString('utf8').replace(/^\uFEFF/,''));if(!result||typeof result!=='object'||Array.isArray(result))fail('invalid_settings');return result;}catch{fail('invalid_settings');}}
+function parse(value){if(value===null)return{};if(value.length>2_000_000)fail('invalid_settings');try{const result=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(value));if(!result||typeof result!=='object'||Array.isArray(result))fail('invalid_settings');return result;}catch{fail('invalid_settings');}}
 function legacy(settings){return Object.values(settings.hooks??{}).some(groups=>Array.isArray(groups)&&groups.some(group=>Array.isArray(group.hooks)&&group.hooks.some(hook=>hookOwner(hook?.command)==='legacy')))||hookOwner(settings.statusLine?.command)==='legacy';}
 export function createIntegrations({home,appData,plugin,node=process.execPath,beforeWrite=()=>{},configDir=process.env.CLAUDE_CONFIG_DIR}={}){
  const settings=()=>safePath(home,path.join(home,'.claude/settings.json'));
  const runtime=()=>safePath(home,path.join(home,'.cardeadeck'));
- function validate(){
+ function validate({claude=true}={}){
   if(!home||!appData||!plugin||!path.isAbsolute(home)||!path.isAbsolute(appData)||!path.isAbsolute(plugin))fail('plugin_location');
   const plugins=path.join(appData,'Elgato/StreamDeck/Plugins'),expected=path.join(plugins,'de.cardea.deck.sdPlugin');
   if(path.resolve(plugin).toLowerCase()!==path.resolve(expected).toLowerCase())fail('plugin_location');safePath(appData,plugin);
@@ -25,7 +25,7 @@ export function createIntegrations({home,appData,plugin,node=process.execPath,be
   if(manifest.UUID!=='de.cardea.deck')fail('plugin_location');
   for(const name of['bridge','runtime','statusline','permission-auth','receiver-client']){const file=safePath(plugin,path.join(plugin,'hooks',name+'.cjs'));if(!fs.existsSync(file)||!fs.statSync(file).isFile())fail('incomplete_plugin');}
   if(!fs.existsSync(node)||!fs.statSync(node).isFile())fail('runtime_missing');
-  if(configDir)fail('custom_config');settings();runtime();
+  if(claude){if(configDir)fail('custom_config');settings();}runtime();
  }
  function status(){
   try{
@@ -63,7 +63,7 @@ export function createIntegrations({home,appData,plugin,node=process.execPath,be
  }
  function codexEnabled(){try{return parse(bytes(safePath(home,path.join(runtime(),'codex-client.json')))).enabled===true;}catch{return false;}}
  function saveCodex(executable){
-  validate();if(typeof executable!=='string'||!path.isAbsolute(executable)||!fs.existsSync(executable))fail('codex_missing');
+  validate({claude:false});if(typeof executable!=='string'||!path.isAbsolute(executable)||!fs.existsSync(executable))fail('codex_missing');
   const target=safePath(home,path.join(runtime(),'codex-client.json')),before=bytes(target),input=parse(before),temp=target+'.'+randomUUID()+'.tmp';
   fs.mkdirSync(path.dirname(target),{recursive:true,mode:0o700});
   try{fs.writeFileSync(temp,JSON.stringify({...input,enabled:true,executable}),{mode:0o600,flag:'wx'});if(hash(bytes(target))!==hash(before))fail('settings_changed');fs.renameSync(temp,target);}finally{if(fs.existsSync(temp))fs.unlinkSync(temp);}

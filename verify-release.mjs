@@ -13,10 +13,17 @@ export function verifyRelease(directory=path.join(root,'release')){
  if(expected.size||entries.reduce((sum,e)=>sum+e.bytes,0)>8*1024*1024)throw Error('Incomplete or oversized plugin');
  const portable=inspectZip(path.join(directory,portableName));if(portable.length>100||portable.filter(e=>/\.(png|jpe?g|svg)$/i.test(e.name)).length>40)throw Error('Portable archive accumulated generated assets');
  if(portable.some(e=>/(?:^|\/)(?:node_modules|\.git|logs)(?:\/|$)|(?:^|\/)(?:connection|state|codex-client|codex-attempts)\.json$|\.log$/i.test(e.name)))throw Error('Private or development file in portable archive');
- for(const name of['hooks/bridge.cjs','hooks/permission-auth.cjs','hooks/receiver-client.cjs','profiles/Cardea Deck.streamDeckProfile']){
+ for(const name of pluginFiles){
   const entry=entries.find(e=>e.name.replace(/^de\.cardea\.deck\.sdPlugin\//,'')===name),file=path.join(root,'dist/de.cardea.deck.sdPlugin',name);
   if(entry.sha256!==createHash('sha256').update(fs.readFileSync(file)).digest('hex'))throw Error('Packaged runtime differs from checked build');
  }
+ const recovery='Remove-Claude-Hooks.ps1',digest=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+ if(digest(path.join(directory,recovery))!==digest(path.join(root,recovery)))throw Error('Recovery helper differs from checked source');
+ const checksums=new Set([pluginName,portableName,recovery]);
+ for(const line of fs.readFileSync(path.join(directory,'SHA256SUMS.txt'),'utf8').trim().split(/\r?\n/)){
+  const match=/^([a-f0-9]{64})  (.+)$/.exec(line);if(!match||!checksums.delete(match[2])||digest(path.join(directory,match[2]))!==match[1])throw Error('Release checksum mismatch');
+ }
+ if(checksums.size)throw Error('Missing release checksum');
  return{version,plugin:pluginName,pluginFiles:entries.length,pluginBytes:fs.statSync(path.join(directory,pluginName)).size,portableFiles:portable.length,portableImages:portable.filter(e=>/\.(png|jpe?g|svg)$/i.test(e.name)).length};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))console.log(JSON.stringify(verifyRelease(),null,2));

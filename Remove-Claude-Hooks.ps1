@@ -31,7 +31,7 @@ $lock=Assert-LocalPath (Join-Path $runtime 'integrations.lock');$handle=[IO.File
 $temporary=$null
 try{
  $lockBytes=[Text.Encoding]::UTF8.GetBytes((@{pid=$PID;at=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()} | ConvertTo-Json -Compress));$handle.Write($lockBytes,0,$lockBytes.Length)
- $before=[IO.File]::ReadAllBytes($settings);$inputSettings=[Text.Encoding]::UTF8.GetString($before).TrimStart([char]0xFEFF) | ConvertFrom-Json
+ $before=[IO.File]::ReadAllBytes($settings);$inputSettings=[Text.UTF8Encoding]::new($false,$true).GetString($before).TrimStart([char]0xFEFF) | ConvertFrom-Json
  if($inputSettings -isnot [pscustomobject]){throw 'Invalid Claude settings'}
  $changed=$false
  if($null -ne $inputSettings.hooks){

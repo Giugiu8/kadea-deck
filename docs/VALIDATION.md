@@ -2,7 +2,9 @@
 
 ## 0.8 plugin installation
 
-Version 0.8 packages the editable four-page MK.2 layout inside the normal `.streamDeckPlugin` and uses Stream Deck's Node runtime for local hook setup. The artifact verifier checks the exact public plugin allowlist, built-hook hashes, a small file/image budget and absence of local state/logs. Profile-generation tests reproduce repeated-build accumulation and verify that a failed render retains the previous complete build.
+Version 0.8 packages the editable four-page MK.2 layout inside the normal `.streamDeckPlugin` and uses Stream Deck's Node runtime for local hook setup. The artifact verifier checks the exact public plugin allowlist, every packaged build-file hash, the standalone recovery helper and release checksums, a small file/image budget and absence of local state/logs. Profile-generation tests reproduce repeated-build accumulation and verify that a failed render retains the previous complete build.
+
+On 2026-11-04 all 136 tests pass under the source-build Node.js runtime and Stream Deck's actual Node.js 20.20.2 executable. The added regression checks cover rapid inspector changes, completion after a selection change, invalid UTF-8 preservation and independent Codex setup with a custom Claude configuration. Claude Opus 5.5 at high effort independently reviewed the preceding 132-test candidate through the CLI and found no blocking security issue; its setup/recovery recommendations led to these additional fixes.
 
 The native Property Inspector was opened in Stream Deck 7.6.0 on the original PC, and the generated profile was imported there with all four pages while the pre-existing Cardea profile remained present. That import exposed an unwanted default-profile flag; the generated profile now uses the null app assignment observed after clearing it in Stream Deck. The native SDK fixture exercises setup and removal through a selected inspector, preserving foreign settings, then tests the built hook's exact approval roundtrip. Separate tests reject stale inspector tokens, extra payload paths, approval-card setup and concurrent settings edits. These fixtures never approve a real Claude action.
 

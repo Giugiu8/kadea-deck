@@ -18,6 +18,8 @@ Vor dem Deinstallieren eine Cardea-Chat-Taste wählen und **Remove Claude hooks*
 
 Wenn das Plugin schon entfernt ist, kann **Remove-Claude-Hooks.ps1** aus dem Release ohne Node.js ausgeführt werden, z. B. mit `powershell.exe -NoProfile -File .\Remove-Claude-Hooks.ps1`. Das Hilfsprogramm entfernt ausschließlich genaue Cardea-Node-Hook-Aufrufe und sichert die betroffene Einstellungsdatei. Es führt keine gespeicherten Befehle aus und ersetzt keine aktuellen Einstellungen durch eine alte Komplettsicherung.
 
+PowerShell kann heruntergeladene Skripte aufgrund einer Firmen- oder Ausführungsrichtlinie blockieren. Die Datei lässt sich vorab mit `Get-FileHash .\Remove-Claude-Hooks.ps1 -Algorithm SHA256` gegen `SHA256SUMS.txt` prüfen. Wird sie trotzdem blockiert, Cardeas Einträge über Claudes `/hooks`-Menü bzw. die von der IT freigegebene Einstellungsverwaltung entfernen. Das Plugin und dieses Hilfsprogramm ändern keine Ausführungsrichtlinie; die normale Entfernung vor der Deinstallation läuft direkt in Stream Deck.
+
 ## Funktionstest
 
 - Die vier Seiten heißen **Claude, Codex, Controls, Apps**. Die Navigation steht auf jeder Seite an denselben Positionen.
