@@ -16,6 +16,12 @@ function brandSvg(card){
   const image=brandImages[card.brand];if(!image||card.omitBrandImage)return '';
   const {x,y,size}=brandBox(card);return `<image href="${image}" x="${x}" y="${y}" width="${size}" height="${size}"/>`;
 }
+// Paths keep their end (the file name), commands their start. Cutting is always visible.
+export function detailLines(summary,{perLine=20,rows=3}={}){
+  const text=String(summary?.text??'');if(!text)return[];const room=perLine*rows;
+  const fitted=text.length<=room?text:summary.kind==='path'?'…'+text.slice(-(room-1)):text.slice(0,room-1)+'…';
+  const lines=[];for(let i=0;i<fitted.length&&lines.length<rows;i+=perLine)lines.push(fitted.slice(i,i+perLine));return lines;
+}
 export function cardSvg(card) {
   const color = palette[card.state] ?? palette.idle;
   const selected = Boolean(card.selected || card.active);
@@ -36,6 +42,13 @@ export function cardSvg(card) {
     body += text(16,76,card.title,34,palette.white,600);
     body += text(16,100,card.subtitle,12,palette.muted);
     body += text(16,124,card.footer,10,color,600);
+  } else if (card.kind === 'approval') {
+    const ink=card.decision==='deny'?palette.error:palette.unread;
+    body+=`<rect x="2" y="2" width="140" height="140" rx="12" fill="${card.decision==='deny'?'#351c29':'#103025'}" stroke="${ink}" stroke-width="2"/>`;
+    body+=text(72,23,String(card.tool??'').slice(0,18),14,palette.white,700,'text-anchor="middle"');
+    detailLines(card.summary).forEach((line,i)=>{body+=`<text x="10" y="${46+i*17}" fill="${palette.white}" font-size="12.5" font-family="Cascadia Mono,Consolas,monospace">${xml(line)}</text>`;});
+    body+=text(72,114,card.title,17,ink,700,'text-anchor="middle"');
+    body+=text(72,131,card.hint??'',11,palette.muted,500,'text-anchor="middle"');
   } else if (card.kind === 'action' || card.kind === 'app') {
     const ink=card.disabled?'#8190a6':card.icon==='check'?palette.unread:card.icon==='close'?palette.error:palette.white;
     const permission=!card.disabled&&['check','close'].includes(card.icon);

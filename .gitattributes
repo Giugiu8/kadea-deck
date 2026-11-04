@@ -1,0 +1,7 @@
+# Byte-identical sources on every checkout: release hashes depend on it.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.streamDeckProfile binary
+*.cmd text eol=crlf

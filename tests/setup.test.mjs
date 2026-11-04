@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {profileTemplate,profileId} from '../profile.mjs';
-import {mergeHooks,events,owned} from '../setup-hooks.mjs';
+import {mergeHooks,statusEvents,owned} from '../setup-hooks.mjs';
 import {createPlan,applyPlan,uninstall,verifyBundle} from '../setup.mjs';
 const write=(file,value)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,typeof value==='string'?value:JSON.stringify(value));};
 const read=file=>JSON.parse(fs.readFileSync(file,'utf8'));
@@ -14,7 +14,7 @@ function fixture(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-setu
  const home=path.join(dir,'user'),appData=path.join(home,'AppData/Roaming'),directory=path.join(dir,'download'),settings=path.join(home,'.claude/settings.json');write(settings,foreign);
  const profile=profileTemplate();const base=path.join(directory,'profile-template',profileId);write(path.join(base,'manifest.json'),profile.manifest);profile.pages.forEach((p,i)=>write(path.join(base,'Profiles',profile.ids[i],'manifest.json'),p));write(path.join(base,'Profiles',profile.manifest.Pages.Default,'manifest.json'),{Controllers:[{Type:'Keypad',Actions:{}}]});
  const plugin=path.join(directory,'de.cardea.deck.sdPlugin');write(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck',Version:'0.7.0.0'});write(path.join(plugin,'bin/plugin.mjs'),'// fixture');write(path.join(plugin,'hooks/bridge.cjs'),'// fixture');write(path.join(plugin,'hooks/statusline.cjs'),'// fixture');
- for(const name of ['permission-auth.cjs','receiver-client.cjs','runtime.cjs'])write(path.join(plugin,'hooks',name),'// fixture');
+ for(const name of ['permission-auth.cjs','receiver-client.cjs','runtime.cjs','tool-summary.cjs'])write(path.join(plugin,'hooks',name),'// fixture');
  write(path.join(appData,'Elgato/StreamDeck/ProfilesV3/existing.sdProfile/manifest.json'),{Device:{Model:'20GBA9901',UUID:'fixture-device'}});
  const files={};function walk(root){for(const e of fs.readdirSync(root,{withFileTypes:true})){const file=path.join(root,e.name);if(e.isDirectory())walk(file);else files[path.relative(directory,file).replaceAll('\\','/')]=createHash('sha256').update(fs.readFileSync(file)).digest('hex');}}walk(directory);write(path.join(directory,'integrity.json'),{schema:1,version:'0.7.0',files});
  return fn({dir,home,appData,directory,settings,plan:()=>createPlan({directory,home,appData})});
@@ -27,7 +27,7 @@ test('portable profile has 60 distinct actions, four pages, separate empty pinne
 });
 test('hook merge is idempotent, preserves foreign settings/status line and removes only our entries',()=>{
  const plugin=path.join(os.tmpdir(),'plugins/de.cardea.deck.sdPlugin'),options={node:process.execPath,plugin};const once=mergeHooks(foreign,options),twice=mergeHooks(once,options);
- assert.deepEqual(twice,once);assert.deepEqual(once.statusLine,foreign.statusLine);assert.deepEqual(once.env,foreign.env);assert.equal(Object.values(once.hooks).flatMap(g=>g.flatMap(x=>x.hooks)).filter(h=>owned(h.command)).length,events.length);
+ assert.deepEqual(twice,once);assert.deepEqual(once.statusLine,foreign.statusLine);assert.deepEqual(once.env,foreign.env);assert.equal(Object.values(once.hooks).flatMap(g=>g.flatMap(x=>x.hooks)).filter(h=>owned(h.command)).length,statusEvents.length);assert.equal(once.hooks.PermissionRequest,undefined);
  assert.deepEqual(mergeHooks(twice,{remove:true}),foreign);assert.throws(()=>mergeHooks({}, {...options,node:'C:\\bad%PATH%\\node.exe'}),/Unsupported/);
 });
 test('fresh setup plan changes nothing; install binds local device and uninstall preserves foreign settings and user state',()=>fixture(f=>{

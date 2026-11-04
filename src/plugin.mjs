@@ -6,12 +6,19 @@ import {DeckStore} from './store.mjs';
 import {startReceiver} from './receiver.mjs';
 import {cardSvg} from './cards.mjs';
 import {refreshDesktopMetadata,openUrl,USAGE,NEW_CHAT} from './desktop.mjs';
+import {verifyPluginFiles} from './integrity.mjs';
 import runtime from '../hooks/runtime.cjs';
 import {CodexStore} from './codex-store.mjs';
 import {createIntegrations} from './integrations.mjs';
 import {registerIntegrationUi} from './integration-ui.mjs';
 import {discoverCodex} from './windows-apps.mjs';
 const directory=runtime.runtimeDirectory();
+const HOLD_MS=1000;
+const pluginDirectory=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+// Set once the files or their permissions cannot be trusted: no hook service, a warning on every key.
+let serviceProblem=null;
+const integrityResult=verifyPluginFiles(pluginDirectory);
+if(integrityResult){serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files failed the integrity check (${integrityResult.reason}${integrityResult.file?': '+integrityResult.file:''}). Hooks are not served; reinstall the plugin.`);}
 // Migrate state only from the native plugin's own view. Never reuse an old
 // connection/token, or overwrite a shared file created by a newer receiver.
 fs.mkdirSync(directory,{recursive:true,mode:0o700});
@@ -23,10 +30,15 @@ const store=new DeckStore({file:path.join(directory,'state.json')});
 const contexts=new Map(),down=new Map(),images=new Map(),bindings=new Map(),pendingImages=new Map();let imageSequence=0;
 const inputDiagnostics={keyDownCount:0,keyUpCount:0,lastAction:null,lastResult:null};
 let codex=null,codexExecutable='',connectingCodex=false;
-const pluginDirectory=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const integrations=createIntegrations({home:process.env.USERPROFILE,appData:process.env.APPDATA,plugin:pluginDirectory});
-const receiver=await startReceiver(store,{directory,getDiagnostics:()=>({visibleKeys:contexts.size,renderedKeys:images.size,...inputDiagnostics,codex:{configured:!!codex,connected:codex?.connected===true,known:codex?.list().length??0,live:codex?.list().filter(t=>t.state!=='unknown').length??0}})});
-const helper=path.join(path.dirname(fileURLToPath(import.meta.url)),'open.exe');
+let receiver=null;
+const publicationFile=path.join(directory,'connection.json');
+if(!serviceProblem)try{receiver=await startReceiver(store,{directory,getDiagnostics:()=>({visibleKeys:contexts.size,renderedKeys:images.size,...inputDiagnostics,codex:{configured:!!codex,connected:codex?.connected===true,known:codex?.list().length??0,live:codex?.list().filter(t=>t.state!=='unknown').length??0}})});}catch{serviceProblem='acl_failed';streamDeck.logger.error('Cardea Deck: could not make the runtime folder private. Hooks are not served.');}
+// Hooks find no receiver and return no decision, so Claude keeps using its own dialogs.
+if(serviceProblem)try{fs.rmSync(publicationFile,{force:true});}catch{}
+let approvalsOn=false;
+const refreshPolicy=()=>{try{approvalsOn=receiver?.policy().enabled===true;}catch{approvalsOn=false;}};refreshPolicy();
+setInterval(refreshPolicy,5000).unref();
 const metadataRoots=()=>{const base=path.join(process.env.LOCALAPPDATA,'Claude-Data');try{return fs.readdirSync(base,{withFileTypes:true}).filter(e=>e.isDirectory()&&e.name.startsWith('claude')).map(e=>path.join(base,e.name,'claude-code-sessions'));}catch{return[];}};
 let chatOffset=0;
 const label={working:'WORKING',attention:'INPUT',unread:'NEW',error:'ERROR',unknown:'UNKNOWN',idle:'READY',ended:'READY'};
@@ -36,10 +48,11 @@ function selectedCard(s,kicker='CLAUDE',emptyCreatesChat=false) {
   return s?{kind:'session',agent:'claude',kicker,title:lines(s.title||s.project),subtitle:s.project,hint:s.requestId?s.pendingTool:s.stale?'Stale signal':!s.desktopId?'No chat link':s.project,footer:s.requestId?`${s.pendingTool||'Tool'} · INPUT`:label[s.state],state:s.state,selected:s.id===store.selected}:{kind:'session',agent:'claude',kicker,title:store.connected?['Empty slot']:['No source'],empty:store.connected,subtitle:'',footer:store.connected?'NO CHAT ASSIGNED':'UNKNOWN STATUS',state:'unknown'};
 }
 function view(kind,settings){
+  if(serviceProblem)return{kind:'action',title:'Reinstall',caption:serviceProblem==='acl_failed'?'FOLDER NOT PRIVATE':'FILES CHANGED',icon:'close',state:'error',disabled:true};
   if(kind.startsWith('codex-')){
     const target=codex?.get(),task=kind==='codex-session'?codex?.list()[Math.max(0,Number(settings.slot)||0)]:target;
     if(kind==='codex-session')return task?{kind:'session',agent:'codex',title:lines(task.title),hint:task.state==='unknown'?'Unverified signal':task.project,state:task.state,selected:task.selected}:{kind:'action',title:'New chat',icon:'chatplus',caption:codex?'Empty slot':'Set up Codex'};
-    if(kind==='codex-permission'){const decision=settings.decision==='deny'?'decline':'accept',ready=!!target?.approval?.decisions.includes(decision);return{kind:'action',title:decision==='accept'?'Approve':'Decline',icon:decision==='accept'?'check':'close',disabled:!ready,caption:ready?`${target.approval.type} · ${target.project}`:target?.state==='attention'?'Check in chat':'No request'};}
+    if(kind==='codex-permission'){const decision=settings.decision==='deny'?'decline':'accept',ready=!!target?.approval?.decisions.includes(decision);return{kind:'action',title:decision==='accept'?'Approve':'Decline',icon:decision==='accept'?'check':'close',disabled:!ready,caption:ready?(decision==='accept'?`HOLD 1 S · ${target.approval.type}`:`${target.approval.type} · ${target.project}`):target?.state==='attention'?'Check in chat':'No request'};}
     return{kind:'action',title:'Stop',icon:'stop',caption:'CODEX · HOLD 1 S',disabled:!target?.stopAllowed};
   }
   const list=store.list(),s=store.get();
@@ -48,7 +61,7 @@ function view(kind,settings){
   if(kind==='summary')return {kind:'summary',agent:'claude',kicker:'CLAUDE',title:store.connected?String(list.length):'—',subtitle:store.connected?'captured chats':'waiting for source',footer:store.connected?`${list.filter(s=>s.state==='attention').length} need input`:'UNKNOWN STATUS',state:list.some(s=>s.state==='attention')?'attention':store.connected?'idle':'unknown'};
   if(kind==='target')return selectedCard(s,'CLAUDE · TARGET');
   if(kind==='quota'){const q=store.quotaView(settings.window==='five_hour'?'five_hour':'seven_day');if(q&&!q.stale)return{kind:'quota',kicker:settings.window==='five_hour'?'CLAUDE · 5 HOURS':'CLAUDE · WEEK',value:`${Math.round(100-q.used)}%`,subtitle:'remaining · reported by source',progress:(100-q.used)/100,state:'unread'};return{kind:'action',kicker:'CLAUDE',title:'Usage',subtitle:q?'Stale value · open':'Open actual limits',icon:'gauge',state:'unknown'};}
-  if(kind==='permission'){const ready=s?.requestId&&receiver.broker.pending.has(s.requestId);return{kind:'action',kicker:'CLAUDE',title:settings.decision==='deny'?'Decline':'Approve',caption:ready?`${s.pendingTool||'Request'} · ${s.project}`:'No request',subtitle:ready?`${s.project} · ${s.pendingTool||'Request'}`:'No selected request',icon:settings.decision==='deny'?'close':'check',state:ready?(settings.decision==='deny'?'error':'unread'):'unknown',disabled:!ready};}
+  if(kind==='permission'){const deny=settings.decision==='deny',summary=s?.requestId?receiver?.broker.summary(s.requestId):null;if(summary)return{kind:'approval',decision:deny?'deny':'allow',tool:s.pendingTool,summary,title:deny?'Decline':'Approve',hint:deny?'PRESS':'HOLD 1 S'};return{kind:'action',kicker:'CLAUDE',title:deny?'Decline':'Approve',caption:!approvalsOn?'Key approvals off':s?.state==='attention'?'Check in chat':'No request',subtitle:'No selected request',icon:deny?'close':'check',state:'unknown',disabled:true};}
   return{kind:'action',kicker:'CLAUDE',title:kind==='ack'?'Read':'Open',subtitle:kind==='ack'?'This result only':'Selected chat',icon:kind==='ack'?'read':'open',state:kind==='ack'&&s?.unread?'unread':'idle',disabled:kind==='ack'&&!s?.unread};
 }
 function inputBinding(kind,settings){const cd=kind.startsWith('codex-');const s=cd?(kind==='codex-session'?codex?.list()[Math.max(0,Number(settings.slot)||0)]:codex?.get()):kind==='session'?store.list()[(['claude','chats'].includes(settings.page)?chatOffset:0)+Math.max(0,Number(settings.slot)||0)]:store.get();return{session:s?{...s}:null,settings:{...settings},codexSnapshot:cd?codex?.snapshot(s):null};}
@@ -57,36 +70,36 @@ async function navigate(s){
   if(!s)return false;store.select(s.id);
   if(!s.desktopId)return false;
   const url=`claude://claude.ai/epitaxy/${s.desktopId}`;
-  return openUrl(helper,url);
+  return openUrl(url);
 }
 class CardeaAction extends SingletonAction {
   constructor(kind){super();this.kind=kind;this.manifestId=`de.cardea.deck.${kind}`;}
   onWillAppear(ev){contexts.set(ev.action.id,{kind:this.kind,action:ev.action,settings:ev.payload.settings??{}});paint();}
   onWillDisappear(ev){contexts.delete(ev.action.id);images.delete(ev.action.id);down.delete(ev.action.id);bindings.delete(ev.action.id);pendingImages.delete(ev.action.id);}
   onDidReceiveSettings(ev){contexts.set(ev.action.id,{kind:this.kind,action:ev.action,settings:ev.payload.settings??{}});images.delete(ev.action.id);paint();}
-  onKeyDown(ev){inputDiagnostics.keyDownCount++;inputDiagnostics.lastAction=this.kind;const binding=bindings.get(ev.action.id);if(!binding||pendingImages.has(ev.action.id)){down.delete(ev.action.id);inputDiagnostics.lastResult='updating';return;}down.set(ev.action.id,{...binding,at:Date.now()});}
+  onKeyDown(ev){if(serviceProblem){void ev.action.showAlert();return;}inputDiagnostics.keyDownCount++;inputDiagnostics.lastAction=this.kind;const binding=bindings.get(ev.action.id);if(!binding||pendingImages.has(ev.action.id)){down.delete(ev.action.id);inputDiagnostics.lastResult='updating';return;}down.set(ev.action.id,{...binding,at:Date.now()});}
   async onKeyUp(ev){
     inputDiagnostics.keyUpCount++;
     const captured=down.get(ev.action.id);down.delete(ev.action.id);if(!captured)return;
-    const {session:s,settings}=captured;let ok=false;
+    const {session:s,settings}=captured,held=Date.now()-captured.at>=HOLD_MS;let ok=false;
     try{
       // Empty at key-down means a new composer, even if the list changes while held.
       if(this.kind==='codex-session'){
-        if(s)ok=!!codex?.select(s.id)&&await openUrl(helper,`codex://threads/${s.id}`);
-        else ok=await openUrl(helper,'codex://threads/new');
+        if(s)ok=!!codex?.select(s.id)&&await openUrl(`codex://threads/${s.id}`);
+        else ok=await openUrl('codex://threads/new');
       }
-      else if(this.kind==='codex-permission')ok=!!codex&&await codex.act(captured.codexSnapshot,settings.decision==='deny'?'decline':'accept');
-      else if(this.kind==='codex-stop')ok=Date.now()-captured.at>=1000&&!!codex&&await codex.act(captured.codexSnapshot,'stop');
-      else if(this.kind==='session')ok=s?await navigate(s):await openUrl(helper,NEW_CHAT);
+      else if(this.kind==='codex-permission')ok=!!codex&&(settings.decision==='deny'||held)&&await codex.act(captured.codexSnapshot,settings.decision==='deny'?'decline':'accept');
+      else if(this.kind==='codex-stop')ok=held&&!!codex&&await codex.act(captured.codexSnapshot,'stop');
+      else if(this.kind==='session')ok=s?await navigate(s):await openUrl(NEW_CHAT);
       else if(this.kind==='open')ok=await navigate(s);
       else if(this.kind==='summary'&&settings.mode==='page'){chatOffset=store.list().length?(chatOffset+6)%(Math.ceil(store.list().length/6)*6):0;ok=true;}
       else if(this.kind==='summary'||this.kind==='target'){
         const list=store.list();const candidates=settings.mode==='waiting'?list.filter(v=>v.state==='attention'):list;
         const index=candidates.findIndex(v=>v.id===store.selected);const next=candidates[(index+1)%candidates.length];
         ok=next?this.kind==='target'?store.select(next.id):await navigate(next):false;
-      }else if(this.kind==='permission')ok=!!s&&receiver.broker.answer({sessionId:s.id,requestId:s.requestId},settings.decision==='deny'?'deny':'allow');
+      }else if(this.kind==='permission'){const deny=settings.decision==='deny';ok=!!s&&!!receiver&&(deny||held)&&receiver.broker.answer({sessionId:s.id,requestId:s.requestId},deny?'deny':'allow');}
       else if(this.kind==='ack')ok=!!s&&store.acknowledge(s.id,s.turn);
-      else if(this.kind==='quota')ok=await openUrl(helper,USAGE);
+      else if(this.kind==='quota')ok=await openUrl(USAGE);
       if(!ok)await ev.action.showAlert();
     }catch{await ev.action.showAlert();}
     inputDiagnostics.lastResult=ok?(this.kind==='session'&&!s?'new-chat':'ok'):'unavailable';paint();
@@ -102,16 +115,19 @@ async function connectCodex(stillCurrent=()=>true,persist=true){
   codex?.close();codexExecutable=executable;codex=new CodexStore({executable,ledgerFile:path.join(directory,'codex-attempts.json')});codex.on('change',()=>{paint();integrationUi.refresh();});codex.start();paint();return true;
  }finally{connectingCodex=false;}
 }
-const integrationUi=registerIntegrationUi({ui:streamDeck.ui,manager:integrations,connectCodex,diagnostics:()=>({sourceHasEvents:store.connected,codexConfigured:integrations.codexEnabled(),codexConnected:codex?.connected===true})});
+function pendingText(){const s=store.get(),summary=s?.requestId?receiver?.broker.summary(s.requestId):null;return summary?`${s.pendingTool}: ${summary.text}`:'';}
+const integrationUi=registerIntegrationUi({ui:streamDeck.ui,manager:integrations,connectCodex,blocked:()=>serviceProblem,diagnostics:()=>{refreshPolicy();return{sourceHasEvents:store.connected,codexConfigured:integrations.codexEnabled(),codexConnected:codex?.connected===true,pending:pendingText()};}});
 store.on('change',()=>integrationUi.refresh());
-if(integrations.codexEnabled())void connectCodex(()=>true,false).catch(()=>{});
-setInterval(()=>{if(codexExecutable&&!fs.existsSync(codexExecutable))void connectCodex(()=>true,false).catch(()=>{});},60_000).unref();
+if(!serviceProblem&&integrations.codexEnabled())void connectCodex(()=>true,false).catch(()=>{});
+// Hook files are read anew on every event, so recheck them while running too.
+setInterval(()=>{if(serviceProblem)return;const result=verifyPluginFiles(pluginDirectory);if(!result)return;serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files changed while running (${result.reason}). Hooks are no longer served.`);void receiver?.close().catch(()=>{});receiver=null;refreshPolicy();codex?.close();codex=null;paint();},5*60_000).unref();
+setInterval(()=>{if(!serviceProblem&&codexExecutable&&!fs.existsSync(codexExecutable))void connectCodex(()=>true,false).catch(()=>{});},60_000).unref();
 store.on('change',paint);setInterval(paint,1000).unref();
 let scanning=false,lastScan=0;async function refresh(){if(scanning||Date.now()-lastScan<5000)return;scanning=true;lastScan=Date.now();try{for(const root of metadataRoots())await refreshDesktopMetadata(store,root);}finally{scanning=false;}}
 setInterval(refresh,30_000).unref();store.on('change',()=>{if(!scanning)void refresh();});
 void refresh();
-function shutdown(){receiver.removeConnection();receiver.broker.close();codex?.close();}
+function shutdown(){receiver?.removeConnection();receiver?.broker.close();codex?.close();}
 process.on('SIGTERM',()=>{shutdown();process.exit(0);});
-process.on('exit',()=>receiver.removeConnection());
+process.on('exit',()=>receiver?.removeConnection());
 process.on('uncaughtException',()=>{streamDeck.logger.error('Cardea Deck: unexpected error; no approval granted.');shutdown();process.exit(1);});
 streamDeck.connect();

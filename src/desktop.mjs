@@ -5,10 +5,13 @@ export const USAGE='https://claude.ai/settings/usage';
 export const NEEDS_INPUT='claude://code/needs-input?source=desktop_action';
 export const NEW_CHAT='claude://code/new?source=desktop_action';
 export function allowedUrl(url){return url===USAGE||url===NEEDS_INPUT||url===NEW_CHAT||/^claude:\/\/claude\.ai\/epitaxy\/[a-zA-Z0-9_-]{1,180}$/.test(url)||/^codex:\/\/threads\/(?:new|[a-f0-9-]{36})$/i.test(url);}
-export function openUrl(helper,url){
+export const shellPath=(env=process.env)=>path.join(env.WINDIR||env.SystemRoot||'C:\\Windows','explorer.exe');
+// Windows' own signed shell hands the URL to its registered handler, so the plugin ships
+// no executable of its own. explorer.exe exits non-zero even on success: only a failure
+// to start it counts. The caller reports a request, never a read receipt.
+export function openUrl(url,{shell=shellPath()}={}){
   if(!allowedUrl(url))return Promise.resolve(false);
-  return new Promise(resolve=>execFile(helper,[url],{windowsHide:false,timeout:10_000},error=>resolve(!error)));
-  // The caller reports a request, never treats ShellExecute success as a read receipt.
+  return new Promise(resolve=>execFile(shell,[url],{windowsHide:false,timeout:10_000},error=>resolve(!error||typeof error.code==='number')));
 }
 const metadataCaches=new WeakMap();
 export async function refreshDesktopMetadata(store,root,{io=fs}={}){

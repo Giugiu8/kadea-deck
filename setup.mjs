@@ -4,6 +4,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {mergeHooks,owned} from './setup-hooks.mjs';
+import {restrictDirectory} from './windows-acl.mjs';
 import {inspectLegacy,removeLegacyHooks,rewriteLegacyProfile,legacyConnectionFile,runtimeMetadataFiles} from './migration.mjs';
 const uuid='de.cardea.deck.sdPlugin',profileId='83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile';
 const read=f=>fs.readFileSync(f,'utf8');
@@ -21,7 +22,7 @@ export function verifyBundle(directory){
  for(const [rel,expected]of Object.entries(integrity.files)){const file=localPath(directory,path.join(directory,rel));if(!/^[a-f0-9]{64}$/.test(expected)||digest(file)!==expected)throw Error('Download verification failed: extract a fresh release archive');}
  return integrity.version;
 }
-export function createPlan({directory,home,appData,node=process.execPath,deviceId=null,codexExecutable=null}={}){
+export function createPlan({directory,home,appData,node=process.execPath,deviceId=null,codexExecutable=null,approvals=false}={}){
  const version=verifyBundle(directory),pluginRoot=path.join(appData,'Elgato/StreamDeck/Plugins'),profilesRoot=path.join(appData,'Elgato/StreamDeck/ProfilesV3');
  const plugin=localPath(pluginRoot,path.join(pluginRoot,uuid)),profile=localPath(profilesRoot,path.join(profilesRoot,profileId));
  const runtime=localPath(home,path.join(home,'.cardeadeck')),receipt=localPath(runtime,path.join(runtime,'install.json'));
@@ -33,11 +34,11 @@ export function createPlan({directory,home,appData,node=process.execPath,deviceI
  if(!deviceId&&devices.size!==1)throw Error('Connect one Stream Deck MK.2 and open Stream Deck once. Multiple devices require --device-id.');
  deviceId??=[...devices][0];
  const settings=localPath(home,path.join(home,'.claude/settings.json')),settingsHash=digest(settings);
- const input=settingsHash?json(settings):{};const merged=mergeHooks(migration?removeLegacyHooks(input):input,{node,plugin});
+ const input=settingsHash?json(settings):{};const merged=mergeHooks(migration?removeLegacyHooks(input):input,{node,plugin,approval:approvals===true});
  const sourcePlugin=path.join(directory,uuid),sourceProfile=path.join(directory,'profile-template',profileId);
  if(json(path.join(sourcePlugin,'manifest.json')).UUID!=='de.cardea.deck')throw Error('Unexpected plugin identity');
  if(codexExecutable&&!/^[A-Z]:[\\/]Program Files[\\/]WindowsApps[\\/]OpenAI\.Codex_[^\\/]+[\\/]app[\\/]resources[\\/]codex\.exe$/i.test(codexExecutable))throw Error('Unsupported Codex executable path');
- return{version,directory,home,appData,runtime,receipt,plugin,profile,settings,settingsHash,merged,deviceId,sourcePlugin,sourceProfile,codexExecutable,migration};
+ return{version,directory,home,appData,runtime,receipt,plugin,profile,settings,settingsHash,merged,deviceId,sourcePlugin,sourceProfile,codexExecutable,migration,approvals:approvals===true};
 }
 function atomic(file,content){fs.mkdirSync(path.dirname(file),{recursive:true});const temp=file+'.'+randomUUID()+'.tmp';try{fs.writeFileSync(temp,content,{mode:0o600,flag:'wx'});fs.renameSync(temp,file);}finally{if(fs.existsSync(temp))fs.unlinkSync(temp);}}
 // Retire beside each target, so redirected AppData never requires a cross-volume
@@ -74,7 +75,7 @@ function rollback(undo){
  }
 }
 export function applyPlan(plan,{host=()=>{}}={}){
- const {runtime,migration}=plan;fs.mkdirSync(runtime,{recursive:true,mode:0o700});const lock=path.join(runtime,'install.lock');
+ const {runtime,migration}=plan;fs.mkdirSync(runtime,{recursive:true,mode:0o700});restrictDirectory(runtime);const lock=path.join(runtime,'install.lock');
  let oldHandle=null,handle=null;const undo=[];let stopped=false;
  if(migration)oldHandle=fs.openSync(path.join(migration.runtime,'install.lock'),'wx');
  try{handle=fs.openSync(lock,'wx');}catch(error){if(oldHandle!==null){fs.closeSync(oldHandle);fs.unlinkSync(path.join(migration.runtime,'install.lock'));}throw error;}
@@ -102,6 +103,7 @@ export function applyPlan(plan,{host=()=>{}}={}){
    }
   }
   if(plan.codexExecutable){const file=path.join(runtime,'codex-client.json');preserve(file,backup,undo);atomic(file,JSON.stringify({enabled:true,executable:plan.codexExecutable}));}
+  {const file=path.join(runtime,'config.json'),current=fs.existsSync(file)?json(file):{};preserve(file,backup,undo);atomic(file,JSON.stringify({...current,schema:1,approvalsEnabled:plan.approvals,...(plan.approvals?{approvalsConsentAt:new Date().toISOString()}:{})},null,2)+'\n');}
   preserve(plan.receipt,backup,undo);atomic(plan.receipt,JSON.stringify({schema:1,version:plan.version,plugin:plan.plugin,profile:plan.profile,backup,installedAt:new Date().toISOString()}));
   if(migration)retireRuntime(migration.runtime,undo);
   atomic(path.join(backup,'locations.json'),JSON.stringify(undo));
@@ -140,6 +142,6 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const directory=path.dirname(fileURLToPath(import.meta.url)),home=process.env.USERPROFILE,appData=process.env.APPDATA;if(!home||!appData)throw Error('Windows user profile is unavailable');
   const host=createHostController(directory);
   if(process.argv.includes('--uninstall')){uninstall({home,appData,host});console.log('Removed own hooks and archived the plugin/profile. Local state and backups retained.');}
-  else{const i=process.argv.indexOf('--device-id'),plan=createPlan({directory,home,appData,deviceId:i>=0?process.argv[i+1]:null,codexExecutable:discoverCodex()});if(process.argv.includes('--check'))console.log(`Ready: Cardea Deck ${plan.version}, MK.2, existing Claude settings preserved. Codex app: ${!!plan.codexExecutable}. Nothing changed.`);else{applyPlan(plan,{host});console.log(`Installed Cardea Deck ${plan.version}. Select the Cardea Deck profile in Stream Deck. Customize Apps on page 4. Run Doctor.ps1 for diagnostics.`);}}
+  else{const i=process.argv.indexOf('--device-id'),plan=createPlan({directory,home,appData,deviceId:i>=0?process.argv[i+1]:null,codexExecutable:discoverCodex(),approvals:process.argv.includes('--enable-approvals')});if(process.argv.includes('--check'))console.log(`Ready: Cardea Deck ${plan.version}, MK.2, existing Claude settings preserved. Codex app: ${!!plan.codexExecutable}. Nothing changed.`);else{applyPlan(plan,{host});console.log(`Installed Cardea Deck ${plan.version}. Select the Cardea Deck profile in Stream Deck. Customize Apps on page 4. Run Doctor.ps1 for diagnostics.`);}}
  }catch(error){console.error('Cardea Deck: '+error.message);process.exitCode=1;}
 }

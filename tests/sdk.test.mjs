@@ -10,21 +10,20 @@ import {fileURLToPath} from 'node:url';
 const require=createRequire(new URL('../package.json',import.meta.url));
 const {WebSocketServer}=require('ws');
 const root=fileURLToPath(new URL('..',import.meta.url));
-test('built plugin registers with the real SDK and renders live receiver events through the socket',{timeout:12_000},async()=>{
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+test('built plugin registers with the real SDK and renders live receiver events through the socket',{timeout:25_000},async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-sdk-'));
- const appData=path.join(dir,'native-appdata'),pluginRoot=path.join(appData,'Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin'),bin=path.join(pluginRoot,'bin');fs.mkdirSync(bin,{recursive:true});
- for(const name of ['manifest.json','package.json'])fs.copyFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin',name),path.join(pluginRoot,name));
- fs.copyFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin/bin/plugin.mjs'),path.join(bin,'plugin.mjs'));
- fs.cpSync(path.join(root,'dist/de.cardea.deck.sdPlugin/hooks'),path.join(pluginRoot,'hooks'),{recursive:true});
+ const appData=path.join(dir,'native-appdata'),pluginRoot=path.join(appData,'Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin'),bin=path.join(pluginRoot,'bin'),win=path.join(dir,'fake-windows');fs.mkdirSync(win);
+ fs.cpSync(path.join(root,'dist/de.cardea.deck.sdPlugin'),pluginRoot,{recursive:true,filter:source=>path.basename(source)!=='logs'});
  const settingsFile=path.join(dir,'.claude/settings.json'),foreign={env:{KEEP:'fixture'},statusLine:{type:'command',command:'echo preserved'}};fs.mkdirSync(path.dirname(settingsFile),{recursive:true});fs.writeFileSync(settingsFile,JSON.stringify(foreign));
- // Test-only opener records the route instead of launching an application.
+ // Test-only stand-in for explorer.exe records the route instead of launching an application.
  const helperSource=path.join(dir,'capture.cs');fs.writeFileSync(helperSource,'using System; using System.IO; class Capture { static int Main(string[] args) { File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"opened.txt"),String.Join("|",args)+"\\n"); return 0; } }');
- execFileSync(path.join(process.env.WINDIR,'Microsoft.NET/Framework64/v4.0.30319/csc.exe'),['/nologo','/target:winexe',`/out:${path.join(bin,'open.exe')}`,helperSource],{windowsHide:true});
+ execFileSync(path.join(process.env.WINDIR,'Microsoft.NET/Framework64/v4.0.30319/csc.exe'),['/nologo','/target:winexe',`/out:${path.join(win,'explorer.exe')}`,helperSource],{windowsHide:true});
  const server=new WebSocketServer({port:0,host:'127.0.0.1'});await once(server,'listening');
  const info={application:{font:'Segoe UI',language:'de',platform:'windows',platformVersion:'10',version:'7.6.0'},plugin:{uuid:'de.cardea.deck',version:'0.1.0.0'},devices:[{id:'test-device',name:'Test',size:{columns:5,rows:3},type:0}]};
- const p=spawn(process.execPath,[path.join(bin,'plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...process.env,APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir,CARDEA_DECK_HOME:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ const p=spawn(process.execPath,[path.join(bin,'plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...Object.fromEntries(Object.entries(process.env).filter(([name])=>!/^(windir|programfiles|programdata)$/i.test(name))),WINDIR:win,ProgramFiles:path.join(dir,'program-files'),ProgramData:path.join(dir,'program-data'),APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir,CARDEA_DECK_HOME:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
  let stderr='',socket;const messages=[];p.stderr.on('data',b=>stderr+=b);
- const deadline=setTimeout(()=>p.kill(),7000);deadline.unref();
+ const deadline=setTimeout(()=>p.kill(),20_000);deadline.unref();
  try{
   [socket]=await Promise.race([once(server,'connection'),once(p,'exit').then(([code])=>{throw Error(`Plugin startup failed (${code}): ${stderr}`);})]);socket.on('message',b=>messages.push(JSON.parse(b)));
   const waitFor=async predicate=>{const start=Date.now();while(!(await predicate())){if(p.exitCode!==null)throw Error(`Plugin exited: ${stderr}`);if(Date.now()-start>4000)throw Error(`Timed out waiting for SDK event: ${stderr}`);await new Promise(r=>setTimeout(r,10));}};
@@ -37,9 +36,15 @@ test('built plugin registers with the real SDK and renders live receiver events 
   const inspect=payload=>socket.send(JSON.stringify({event:'sendToPlugin',action:'de.cardea.deck.session',context:'test-key',payload}));
   inspect({cmd:'setupClaude',nonce,plugin:'C:/must-not-use'});inspect({cmd:'setupClaude',nonce});
   await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.claude==='installed'));
-  const integrated=JSON.parse(fs.readFileSync(settingsFile));assert.deepEqual(integrated.env,foreign.env);assert.deepEqual(integrated.statusLine,foreign.statusLine);assert.ok(integrated.hooks.PermissionRequest[0].hooks[0].command.includes(pluginRoot));
-  inspect({cmd:'removeClaude',nonce});await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.message==='done'&&m.payload.claude==='not_set_up'));
+  const integrated=JSON.parse(fs.readFileSync(settingsFile));assert.deepEqual(integrated.env,foreign.env);assert.deepEqual(integrated.statusLine,foreign.statusLine);assert.ok(integrated.hooks.Stop[0].hooks[0].command.includes(pluginRoot));assert.equal(integrated.hooks.PermissionRequest,undefined,'Setup alone never adds the approval hook');
+  // Key approvals need the consent field, and enabling them adds exactly that hook.
+  inspect({cmd:'enableApprovals',nonce});await pause(100);assert.equal(JSON.parse(fs.readFileSync(settingsFile)).hooks.PermissionRequest,undefined);
+  inspect({cmd:'enableApprovals',nonce,consent:'approve-by-key'});await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.approvals==='on'));
+  assert.ok(JSON.parse(fs.readFileSync(settingsFile)).hooks.PermissionRequest[0].hooks[0].command.includes(pluginRoot));
+  inspect({cmd:'removeClaude',nonce});await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.message==='done'&&m.payload.claude==='not_set_up'&&m.payload.approvals==='off'));
   assert.deepEqual(JSON.parse(fs.readFileSync(settingsFile)),foreign);
+  // Back on for the key tests below; the receiver reads the same consent record.
+  inspect({cmd:'enableApprovals',nonce,consent:'approve-by-key'});const enabledAt=messages.length;await waitFor(()=>messages.slice(enabledAt).some(m=>m.event==='sendToPropertyInspector'&&m.payload.approvals==='on'));
   socket.send(JSON.stringify({event:'propertyInspectorDidDisappear',action:'de.cardea.deck.session',context:'test-key',device:'test-device'}));
   const c=JSON.parse(fs.readFileSync(path.join(dir,'.cardeadeck/connection.json'),'utf8'));
   const result=await fetch(`http://127.0.0.1:${c.port}/event`,{method:'POST',headers:{'X-Cardea-Token':c.token},body:JSON.stringify({event:'UserPromptSubmit',sessionId:'sdk-fixture',eventId:'sdk-event',at:Date.now(),cwd:'G:\\TestProject'})});
@@ -62,29 +67,40 @@ test('built plugin registers with the real SDK and renders live receiver events 
   await waitFor(async()=> (await(await fetch(base+'/status',{headers})).json()).lastResult!==null);
   assert.equal(messages.filter(m=>m.event==='showAlert'&&m.context==='empty-key').length,0,'An unassigned slot must not display the yellow warning triangle');
   assert.equal((await(await fetch(base+'/status',{headers})).json()).lastResult,'new-chat');
-  assert.equal(fs.readFileSync(path.join(bin,'opened.txt'),'utf8'),'claude://code/new?source=desktop_action\n');
+  assert.equal(fs.readFileSync(path.join(win,'opened.txt'),'utf8'),'claude://code/new?source=desktop_action\n');
   // A real chat without a desktop link still reports unavailability. The fix
   // must not suppress alerts for actual failed navigation attempts.
   press('test-key',0);
   await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='test-key'));
   const post=(route,event,extra={})=>fetch(base+route,{method:'POST',headers,body:JSON.stringify({event,sessionId:'sdk-fixture',eventId:`sdk-${++seq}`,at:Date.now(),cwd:'G:\\TestProject',...extra})});let seq=0;
-  const permission=tool=>{
+  const permission=(tool,tool_input)=>{
    const hook=spawn(process.execPath,[path.join(root,'dist/de.cardea.deck.sdPlugin/hooks/bridge.cjs'),'PermissionRequest'],{env:{...process.env,CARDEA_DECK_HOME:path.join(dir,'.cardeadeck')},windowsHide:true,stdio:['pipe','pipe','pipe']});
    let output='',errors='';hook.stdout.on('data',b=>output+=b);hook.stderr.on('data',b=>errors+=b);
-   const ended=once(hook,'close');hook.stdin.end(JSON.stringify({session_id:'sdk-fixture',tool_name:tool,cwd:'G:\\TestProject'}));
+   const ended=once(hook,'close');hook.stdin.end(JSON.stringify({session_id:'sdk-fixture',tool_name:tool,tool_input,cwd:'G:\\TestProject'}));
    return ended.then(([code])=>{assert.equal(code,0,errors);assert.equal(errors,'');return output?JSON.parse(output):{};});
   };
   socket.send(JSON.stringify({event:'willAppear',action:'de.cardea.deck.permission',context:'approve-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:1,row:0},isInMultiAction:false,settings:{decision:'allow'},state:0}}));
-  const first=permission('Bash');
-  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('Bash')));
+  const first=permission('Read',{file_path:'C:\\a\\first.txt'});
+  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('first.txt')));
   const key=event=>socket.send(JSON.stringify({event,action:'de.cardea.deck.permission',context:'approve-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:1,row:0},isInMultiAction:false,settings:{decision:'allow'},state:0}}));
   key('keyDown');await new Promise(r=>setTimeout(r,15));
   await post('/event','UserPromptSubmit');assert.deepEqual(await first,{});
-  const next=permission('Read');
-  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('Read')));
+  const next=permission('Read',{file_path:'C:\\a\\second.txt'});
+  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('second.txt')));
+  assert.ok(messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('HOLD 1 S')));
   key('keyUp');await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='approve-key'));
   assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,1);
-  key('keyDown');key('keyUp');assert.equal((await next).hookSpecificOutput.decision.behavior,'allow');
+  // One quick press must not allow anything; holding for a second does.
+  const alerts=()=>messages.filter(m=>m.event==='showAlert'&&m.context==='approve-key').length,alertsBefore=alerts();
+  key('keyDown');await pause(30);key('keyUp');await waitFor(()=>alerts()>alertsBefore);
+  assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,1,'A short press leaves the request open');
+  key('keyDown');await pause(1050);key('keyUp');assert.equal((await next).hookSpecificOutput.decision.behavior,'allow');
+  // Commands never wait for a key: no decision at once, so Claude opens its own dialog.
+  assert.deepEqual(await permission('Bash',{command:'echo PRIVATE_SENTINEL'}),{});
+  assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,0);
+  const decisions=fs.readFileSync(path.join(dir,'.cardeadeck/decisions.jsonl'),'utf8');
+  assert.deepEqual(decisions.trim().split('\n').map(line=>{const e=JSON.parse(line);return[e.tool,e.decision];}),[['Read','cancelled'],['Read','allow'],['Bash','deferred']]);
+  assert.ok(!decisions.includes('second.txt')&&!decisions.includes('PRIVATE_SENTINEL'));
   // Without a configured Codex source, its permission key must fail closed;
   // an empty chat key may still open only the fixed new-composer route.
   const codexKey=(kind,context,event,settings={})=>socket.send(JSON.stringify({event,action:`de.cardea.deck.codex-${kind}`,context,device:'test-device',payload:{controller:'Keypad',coordinates:{column:0,row:1},isInMultiAction:false,settings,state:0}}));
@@ -93,6 +109,30 @@ test('built plugin registers with the real SDK and renders live receiver events 
   codexKey('permission','codex-allow','keyDown',{decision:'allow'});codexKey('permission','codex-allow','keyUp',{decision:'allow'});
   await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='codex-allow'));
   codexKey('session','codex-empty','willAppear',{slot:0});await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='codex-empty'));codexKey('session','codex-empty','keyDown',{slot:0});codexKey('session','codex-empty','keyUp',{slot:0});
-  await waitFor(()=>fs.readFileSync(path.join(bin,'opened.txt'),'utf8').includes('codex://threads/new'));
+  await waitFor(()=>fs.readFileSync(path.join(win,'opened.txt'),'utf8').includes('codex://threads/new'));
  }finally{clearTimeout(deadline);if(p.exitCode===null&&p.signalCode===null){const ended=once(p,'exit');p.kill();await ended;}socket?.terminate();await new Promise(resolve=>server.close(resolve));assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-sdk-'));fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('changed plugin files stop hook service and show a warning, while hooks fall back to no decision',{timeout:15_000},async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-sdk-')),appData=path.join(dir,'native-appdata'),pluginRoot=path.join(appData,'Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin');
+ fs.cpSync(path.join(root,'dist/de.cardea.deck.sdPlugin'),pluginRoot,{recursive:true,filter:source=>path.basename(source)!=='logs'});
+ fs.appendFileSync(path.join(pluginRoot,'hooks/bridge.cjs'),'\n// edited after installation\n');
+ const runtime=path.join(dir,'.cardeadeck');fs.mkdirSync(runtime);fs.writeFileSync(path.join(runtime,'connection.json'),'{"schema":2,"stale":true}');
+ const server=new WebSocketServer({port:0,host:'127.0.0.1'});await once(server,'listening');
+ const info={application:{font:'Segoe UI',language:'de',platform:'windows',platformVersion:'10',version:'7.6.0'},plugin:{uuid:'de.cardea.deck',version:'0.1.0.0'},devices:[{id:'test-device',name:'Test',size:{columns:5,rows:3},type:0}]};
+ const p=spawn(process.execPath,[path.join(pluginRoot,'bin/plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...process.env,APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir,CARDEA_DECK_HOME:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ let stderr='',socket;const messages=[];p.stderr.on('data',b=>stderr+=b);const deadline=setTimeout(()=>p.kill(),10_000);deadline.unref();
+ try{
+  [socket]=await Promise.race([once(server,'connection'),once(p,'exit').then(([code])=>{throw Error('Plugin startup failed ('+code+'): '+stderr);})]);socket.on('message',b=>messages.push(JSON.parse(b)));
+  const waitFor=async predicate=>{const start=Date.now();while(!predicate()){if(Date.now()-start>5000)throw Error('Timed out: '+stderr);await pause(10);}};
+  await waitFor(()=>messages.some(m=>m.event==='registerPlugin'));
+  const payload={controller:'Keypad',coordinates:{column:0,row:0},isInMultiAction:false,settings:{decision:'allow'},state:0};
+  for(const event of ['willAppear'])socket.send(JSON.stringify({event,action:'de.cardea.deck.permission',context:'warned-key',device:'test-device',payload}));
+  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='warned-key'&&decodeURIComponent(m.payload.image).includes('FILES CHANGED')));
+  assert.equal(fs.existsSync(path.join(runtime,'connection.json')),false,'No receiver is published and a stale one is removed');
+  socket.send(JSON.stringify({event:'keyDown',action:'de.cardea.deck.permission',context:'warned-key',device:'test-device',payload}));
+  await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='warned-key'));
+  const hook=spawn(process.execPath,[path.join(pluginRoot,'hooks/bridge.cjs'),'PermissionRequest'],{env:{...process.env,CARDEA_DECK_HOME:runtime},windowsHide:true,stdio:['pipe','pipe','pipe']});let output='';hook.stdout.on('data',b=>output+=b);const ended=once(hook,'close');hook.stdin.end(JSON.stringify({session_id:'x',tool_name:'Read',tool_input:{file_path:'C:/a'}}));
+  assert.equal((await ended)[0],0);assert.equal(output,'','No decision: Claude uses its own dialog');
+ }finally{clearTimeout(deadline);if(p.exitCode===null&&p.signalCode===null){const ended=once(p,'exit');p.kill();await ended;}socket?.terminate();await new Promise(resolve=>server.close(resolve));assert.ok(path.basename(dir).startsWith('cardea-sdk-'));fs.rmSync(dir,{recursive:true,force:true});}
 });

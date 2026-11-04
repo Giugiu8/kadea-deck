@@ -162,7 +162,7 @@ test('receiver rejects missing challenges before creating pending permissions an
 test('a missing packaged auth helper is a silent no-decision outcome',async()=>{
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-permission-'));
  try{
-  for(const name of ['bridge.cjs','runtime.cjs','receiver-client.cjs'])fs.copyFileSync(fileURLToPath(new URL('../hooks/'+name,import.meta.url)),path.join(directory,name));
+  for(const name of ['bridge.cjs','runtime.cjs','receiver-client.cjs','tool-summary.cjs'])fs.copyFileSync(fileURLToPath(new URL('../hooks/'+name,import.meta.url)),path.join(directory,name));
   assert.deepEqual(await hook(directory,path.join(directory,'bridge.cjs')),{code:0,stdout:'',stderr:''});
  }finally{removeFixture(directory);}
 });

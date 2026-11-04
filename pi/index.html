@@ -2,11 +2,18 @@
 <link rel="stylesheet" href="style.css">
 <strong>Cardea Deck · __VERSION__</strong>
 <section id="connections"><h2>Local connections</h2><p id="status" role="status" aria-live="polite">Connecting to Stream Deck…</p>
-<div id="setup-buttons"><button id="setupClaude" disabled>Set up Claude</button><button id="connectCodex" disabled>Connect Codex</button><button id="removeClaude" class="secondary" disabled>Remove Claude hooks</button></div>
-<small id="setup-help">Settings are backed up. Existing hooks and custom status lines are preserved. Start a new Claude chat after setup.</small></section>
+<p id="pending" hidden></p>
+<div id="setup-buttons"><button id="setupClaude" disabled>Set up Claude</button><button id="connectCodex" disabled>Connect Codex</button><button id="removeStatus" class="secondary" disabled>Remove status hooks</button>
+<h2>Approval by key (optional)</h2>
+<p id="approvals-state"></p>
+<small>Off by default. A key can then allow low-risk tools only (<span id="allowlist">Read, Grep, Glob, LS</span>). Commands, file changes and network access always stay in Claude's own dialog.</small>
+<label id="consent-field"><input id="approvalConsent" type="checkbox"> I want to approve Claude requests with a Stream Deck key</label>
+<button id="enableApprovals" disabled>Enable key approvals</button><button id="disableApprovals" class="secondary" disabled>Disable key approvals</button>
+<button id="removeClaude" class="secondary" disabled>Remove all Claude hooks</button></div>
+<small id="setup-help">Set up Claude adds status hooks only. Settings are backed up. Existing hooks and custom status lines are preserved. Start a new Claude chat after setup.</small></section>
 <label id="slot-field">Chat slot (1–6)<input id="slot" type="number" min="1" max="6" value="1"></label>
 <label id="decision-field">Decision<select id="decision"><option value="allow">Approve once</option><option value="deny">Decline once</option></select></label>
 <label id="window-field">Usage window<select id="window"><option value="seven_day">Week</option><option value="five_hour">5 hours</option></select></label>
 <p>Blue: WORKING · Yellow: INPUT · Green: NEW · Red: reported error · Gray: READY or UNKNOWN.</p>
-<small>Approval requires a matching pending request. Stop: hold for 1 second. Remove Claude hooks here before uninstalling the plugin.</small>
+<small>Approve: hold for 1 second, on a matching pending request. Decline: press. Stop: hold for 1 second. Remove all Claude hooks here before uninstalling the plugin.</small>
 <script src="index.js"></script></html>

@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {mergeHooks} from './claude-hooks.mjs';
-export {mergeHooks,events,owned} from './claude-hooks.mjs';
+export {mergeHooks,events,statusEvents,approvalEvent,owned} from './claude-hooks.mjs';
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const [mode,input,output,node,plugin]=process.argv.slice(2);if(!['install','remove'].includes(mode)||!input||!output)throw Error('Expected install/remove input output node plugin');
+ const [mode,input,output,node,plugin]=process.argv.slice(2),approval=process.argv.includes('--enable-approvals');if(!['install','remove','remove-status','remove-approval'].includes(mode)||!input||!output)throw Error('Expected install/remove/remove-status/remove-approval input output node plugin [--enable-approvals]');
  const settings=fs.existsSync(input)?JSON.parse(fs.readFileSync(input,'utf8').replace(/^\uFEFF/,'')):{};
- fs.writeFileSync(output,JSON.stringify(mergeHooks(settings,{node,plugin,remove:mode==='remove'}),null,2)+'\n',{mode:0o600});
+ fs.writeFileSync(output,JSON.stringify(mergeHooks(settings,{node,plugin,approval,remove:mode==='remove'?true:mode==='remove-status'?'status':mode==='remove-approval'?'approval':false}),null,2)+'\n',{mode:0o600});
 }

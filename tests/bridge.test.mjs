@@ -24,19 +24,19 @@ test('MSIX appdata overlays do not split the native receiver and desktop hook',a
   assert.equal(fs.existsSync(path.join(dir,'claude-private-overlay')),false);
  }finally{await r.close();removeFixture(dir);}
 });
-async function fixture(fn,timeoutMs=55_000){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-bridge-'));const s=new DeckStore(),r=await startReceiver(s,{directory:dir,timeoutMs});try{await fn(s,r,dir);}finally{await r.close();removeFixture(dir);}}
+async function fixture(fn,timeoutMs=55_000){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-bridge-'));const s=new DeckStore(),r=await startReceiver(s,{directory:dir,timeoutMs,policy:()=>({enabled:true,allowlist:['Read']})});try{await fn(s,r,dir);}finally{await r.close();removeFixture(dir);}}
 test('real bridge process forwards only the metadata allowlist',()=>fixture(async(s,r,dir)=>{
  const result=await call(dir,'PreToolUse',{session_id:'bridge-session',cwd:'G:\\ExampleProject',tool_use_id:'tool-123',prompt:'PRIVATE_SENTINEL',tool_input:{secret:'PRIVATE_SENTINEL'},transcript_path:'PRIVATE_SENTINEL'});
  assert.deepEqual(result,{code:0,stdout:'',stderr:''});assert.equal(s.get('bridge-session').state,'working');assert.equal(s.get('bridge-session').lastToolId,'tool-123');assert.ok(!JSON.stringify([...s.sessions.values()]).includes('PRIVATE_SENTINEL'));
 }));
 test('permission roundtrip returns one native hook decision for the exact chosen request',()=>fixture(async(s,r,dir)=>{
- const result=call(dir,'PermissionRequest',{session_id:'approval-session',cwd:'G:\\ExampleProject',tool_name:'Bash',tool_input:{command:'PRIVATE_SENTINEL'}});
+ const result=call(dir,'PermissionRequest',{session_id:'approval-session',cwd:'G:\\ExampleProject',tool_name:'Read',tool_input:{file_path:'C:\\example\\PRIVATE_SENTINEL'}});
  while(!s.get('approval-session')?.requestId)await once(s,'change');
  const target=s.get('approval-session');assert.equal(r.broker.answer({sessionId:target.id,requestId:target.requestId},'deny'),true);
  const response=await result;assert.equal(response.code,0);const value=JSON.parse(response.stdout);assert.equal(value.hookSpecificOutput.decision.behavior,'deny');assert.ok(!response.stdout.includes('PRIVATE_SENTINEL'));
 }));
 test('permission timeout emits no provider decision and restores the native prompt',()=>fixture(async(s,r,dir)=>{
- const response=await call(dir,'PermissionRequest',{session_id:'timeout-session',cwd:'G:\\ExampleProject',tool_name:'Read'});
+ const response=await call(dir,'PermissionRequest',{session_id:'timeout-session',cwd:'G:\\ExampleProject',tool_name:'Read',tool_input:{file_path:'C:\\example.txt'}});
  assert.equal(response.stdout,'');assert.equal(response.code,0);assert.equal(s.get('timeout-session').requestId,null);assert.equal(s.get('timeout-session').state,'attention');
 },35));
 test('missing connection never blocks or writes a fake decision',async()=>{
