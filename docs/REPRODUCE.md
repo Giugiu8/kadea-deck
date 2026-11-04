@@ -2,7 +2,7 @@
 
 Official releases are built by the [Release workflow](../.github/workflows/release.yml) from a Git tag. A second job rebuilds the code on Linux and must match. Only then does a separate job, which runs no repository code, attest the files, and only then are they published.
 
-The first release made this way is still to come. Version `v0.8.0-beta.1` was built locally and is not covered.
+Version `v0.9.0-beta.1` is the first release made this way. `v0.8.0-beta.1` was built locally and is not covered.
 
 ## 1. Check the origin
 

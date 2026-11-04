@@ -3,14 +3,14 @@
 Cardea Deck ist eine experimentelle Windows-Beta für das Stream Deck MK.2 mit 15 Tasten. Der normale Download ist jetzt **eine `.streamDeckPlugin`-Datei** mit eingebautem Profil. Quellordner, `node_modules`, ein separates Node.js und lose Bilder werden dafür nicht gebraucht.
 
 1. Stream Deck 7.1 oder neuer sowie Claude und Codex installieren und lokal anmelden. Das MK.2 anschließen. Elgatos offizielles Codex-Plugin zusätzlich installieren, wenn Dictate, Modellauswahl und Verbrauchstasten genutzt werden sollen.
-2. Im [aktuellen Release](https://github.com/Giugiu8/cardea-deck/releases) **Cardea-Deck-0.8.0.streamDeckPlugin** herunterladen und doppelklicken. Die Installation in Stream Deck bestätigen.
+2. Im [aktuellen Release](https://github.com/Giugiu8/cardea-deck/releases) **Cardea-Deck-0.9.0.streamDeckPlugin** herunterladen und doppelklicken. Die Installation in Stream Deck bestätigen.
 3. Das angebotene vierseitige Profil importieren. Ein bestehendes Profil bleibt erhalten. Wer bereits ein angepasstes Cardea-Profil hat, kann dieses behalten und das zusätzliche Profilangebot ablehnen.
-4. Im Stream-Deck-Editor eine Cardea-**Chat-Taste** auswählen. Unten unter **Local connections** erst **Set up Claude**, dann **Connect Codex** anklicken. Ab Version 0.9 richtet **Set up Claude** nur die Status-Hooks ein. Vorhandene fremde Hooks und eine eigene Statusline bleiben erhalten; geänderte Einstellungen werden lokal gesichert. Auf Freigabe-/Stop-Tasten wird keine Einrichtung angeboten.
+4. Im Stream-Deck-Editor eine Cardea-**Chat-Taste** auswählen. Unten unter **Local connections** erst **Set up Claude**, dann **Connect Codex** anklicken. **Set up Claude** richtet nur die Status-Hooks ein. Dafür wird Claude Code ab Mai 2026 gebraucht; Git Bash ist nicht nötig. Vorhandene fremde Hooks und eine eigene Statusline bleiben erhalten; geänderte Einstellungen werden lokal gesichert. Auf Freigabe-/Stop-Tasten wird keine Einrichtung angeboten.
 5. Einen neuen Claude-Chat starten, damit die aktualisierten Hooks geladen werden. Codex geöffnet lassen. Auf **Apps** die fünf **Choose app**-Tasten den lokalen Arbeitsprogrammen zuweisen.
 
 „Hooks installed“ bestätigt den Eintrag in den Einstellungen; „source active“ benötigt ein tatsächlich empfangenes Ereignis. Fehlende Statusquellen bleiben **UNKNOWN**. Bei einer fremden Claude-Statusline kann die Claude-Verbrauchstaste nur die echte Verbrauchsseite öffnen. Nach einem Stream-Deck-Runtime-Update lässt sich eine angezeigte nötige Reparatur mit **Set up Claude** durchführen.
 
-## Freigaben per Taste (ab 0.9, optional)
+## Freigaben per Taste (optional)
 
 Standardmäßig aus. Wer sie möchte, setzt in **Approval by key** das Häkchen und klickt **Enable key approvals**. Danach gilt:
 

@@ -6,11 +6,11 @@
 
 Claude and Codex on your Stream Deck — see who is working, who needs you, and who has an answer.
 
-[![Windows beta](https://img.shields.io/badge/Windows-beta_0.8.0-59b5ff?style=flat-square)](https://github.com/Giugiu8/cardea-deck/releases/tag/v0.8.0-beta.1)
+[![Windows beta](https://img.shields.io/badge/Windows-beta_0.9.0-59b5ff?style=flat-square)](https://github.com/Giugiu8/cardea-deck/releases/tag/v0.9.0-beta.1)
 [![Build and tests](https://github.com/Giugiu8/cardea-deck/actions/workflows/check.yml/badge.svg)](https://github.com/Giugiu8/cardea-deck/actions/workflows/check.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-4de398?style=flat-square)](LICENSE)
 
-**[Download Stream Deck plugin](https://github.com/Giugiu8/cardea-deck/releases/download/v0.8.0-beta.1/Cardea-Deck-0.8.0.streamDeckPlugin)** · **[German installation guide](docs/INSTALL-DE.md)** · [How it works](#controls)
+**[Download Stream Deck plugin](https://github.com/Giugiu8/cardea-deck/releases/download/v0.9.0-beta.1/Cardea-Deck-0.9.0.streamDeckPlugin)** · **[German installation guide](docs/INSTALL-DE.md)** · [How it works](#controls)
 
 </div>
 
@@ -41,14 +41,14 @@ Same positions for both providers. Six chats per page. Navigation stays **Claude
 
 No cloud telemetry or account keys required by Cardea Deck. Setup preserves existing Claude hooks and custom status lines; local state stays on its PC. [Privacy and limitations](#privacy-and-limitations).
 
-**Coming in 0.9:** key approvals off by default and limited to low-risk tools, a local decision log, runtime integrity checks and verifiable releases. See [CHANGELOG.md](CHANGELOG.md), [THREAT-MODEL.md](THREAT-MODEL.md) and, for IT administrators, [docs/MANAGED-SETTINGS.md](docs/MANAGED-SETTINGS.md).
+**New in 0.9:** key approvals off by default and limited to low-risk tools, a local decision log, runtime integrity checks and verifiable releases. Hooks now need a Claude Code version from May 2026 or later. See [CHANGELOG.md](CHANGELOG.md), [THREAT-MODEL.md](THREAT-MODEL.md) and, for IT administrators, [docs/MANAGED-SETTINGS.md](docs/MANAGED-SETTINGS.md).
 
 **Security notice:** `v0.7.0-beta.1` has a Claude permission-response impersonation flaw. Version 0.8 includes the authenticated receiver and response fix. Update the complete plugin and run **Set up Claude** to refresh its hooks. Keep Cardea's `PermissionRequest` hook disabled on unpatched installations. See [SECURITY.md](SECURITY.md).
 
 ## Quick start
 
 1. Have **Stream Deck 7.1+** and your signed-in Claude/Codex desktop apps installed. Connect the 15-key MK.2. Install Elgato's official Codex plugin separately for dictation, model selection and usage.
-2. Download **Cardea-Deck-0.8.0.streamDeckPlugin** and double-click it. Stream Deck installs the plugin and offers the bundled four-page profile. Keep your existing Cardea profile if you have customized it; a second layout is optional.
+2. Download **Cardea-Deck-0.9.0.streamDeckPlugin** and double-click it. Stream Deck installs the plugin and offers the bundled four-page profile. Keep your existing Cardea profile if you have customized it; a second layout is optional.
 3. Select any Cardea **chat key** in the Stream Deck editor. In **Local connections**, click **Set up Claude** and **Connect Codex**. Setup backs up the settings it changes and preserves foreign hooks and custom status lines. A repair notice after a Stream Deck update is resolved by clicking **Set up Claude** again.
 4. Start a new Claude chat to load its hooks. Codex must be open for its live status source. On **Apps**, assign the five **Choose app** keys to your own programs.
 
@@ -72,7 +72,7 @@ Navigation on every page: **Claude · Codex · Controls · Apps**.
 
 Six chat keys per provider, with the same positions and renderer. Press a chat to select/open it. Empty chat slots open a blank composer. A white corner marks selection. Choosing/opening alone does not acknowledge a Claude result; **Read** does.
 
-From 0.9, **Approve** needs a one-second hold and key approvals must be enabled first. They cover `Read`, `Grep`, `Glob` and `LS`, and show the tool and content on the key. Commands, file changes, network access and anything the key cannot show reliably stay in Claude's own dialog.
+**Approve** needs a one-second hold and key approvals must be enabled first. They cover `Read`, `Grep`, `Glob` and `LS`, and show the tool and content on the key. Commands, file changes, network access and anything the key cannot show reliably stay in Claude's own dialog.
 
 **Approve/Decline** act only on the selected supported pending request, once. Codex uses a fresh owner snapshot and a durable hashed send journal. Ambiguous sends remain locked; continue in the chat instead of deleting the journal. Unsupported or multiple requests stay in the chat. No permanent blanket approval.
 
@@ -92,7 +92,7 @@ Claude usage is shown only when real `rate_limits` arrive through our status lin
 
 Double-click the next `.streamDeckPlugin` to update. Keep your customized profile when Stream Deck offers an optional layout. **Set up Claude** refreshes only our hook paths; settings backups stay private under `.cardeadeck/backups`. A legacy predecessor is reported instead of silently installing a second approval hook.
 
-Before uninstalling, select a Cardea chat key and click **Remove Claude hooks** (from 0.9: **Remove all Claude hooks**), then uninstall the plugin in Stream Deck. If you already removed it, the release's standalone **Remove-Claude-Hooks.ps1** removes only exact Cardea Node hook commands, without requiring Node.js or restoring an old whole settings file. Other settings, local state and backups are retained. For an old managed ZIP installation, `Uninstall.cmd` remains available in its download.
+Before uninstalling, select a Cardea chat key and click **Remove all Claude hooks**, then uninstall the plugin in Stream Deck. If you already removed it, the release's standalone **Remove-Claude-Hooks.ps1** removes only exact Cardea Node hook commands, without requiring Node.js or restoring an old whole settings file. Other settings, local state and backups are retained. For an old managed ZIP installation, `Uninstall.cmd` remains available in its download.
 
 Corporate or PowerShell execution policy may block the downloaded recovery script. Verify it against `SHA256SUMS.txt` with `Get-FileHash .\Remove-Claude-Hooks.ps1 -Algorithm SHA256`; the helper never changes execution policy. If blocked, back up `%USERPROFILE%\.claude\settings.json`, then remove only Cardea's hook entries and its status-line command if present, manually or using IT-approved settings management. Preserve unrelated entries. Claude's [`/hooks` menu](https://code.claude.com/docs/en/hooks#the-hooks-menu) only displays commands and their source locations. Native removal before uninstalling avoids this recovery step.
 
