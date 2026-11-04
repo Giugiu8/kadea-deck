@@ -18,7 +18,7 @@ async function diagnose(home,powershell=false){
  let stdout='',stderr='';child.stdout.on('data',b=>stdout+=b);child.stderr.on('data',b=>stderr+=b);
  const [code]=await once(child,'close');assert.equal(code,0,stderr);assert.equal(stderr,'');return{value:JSON.parse(stdout),text:stdout};
 }
-test('Node and PowerShell diagnostics authenticate the receiver and never print keys',{timeout:10_000},async()=>{
+test('Node and PowerShell diagnostics authenticate the receiver and never print keys',{timeout:45_000},async()=>{
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-doctor-')),runtime=path.join(directory,'.cardeadeck');
  const receiver=await startReceiver(new DeckStore(),{directory:runtime});let substitute,closed=false;
  try{

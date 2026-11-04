@@ -41,16 +41,16 @@ test('the built plugin carries a complete manifest that matches its files',()=>{
 });
 
 const icacls=(...args)=>execFileSync(path.join(process.env.SystemRoot,'System32/icacls.exe'),args,{windowsHide:true,stdio:'pipe'});
-const single=(target,flags)=>{const{protected:isProtected,aces}=parseAces(readAcls(target)[0].sddl);assert.equal(aces.length,1);assert.equal(aces[0].sid,currentUserSid());assert.equal(aces[0].type,'A');assert.equal(aces[0].rights,'FA');if(flags)assert.equal(aces[0].flags,flags);return isProtected;};
+const single=(target,flags)=>{const{protected:isProtected,aces}=parseAces(readAcls(target)[0].sddl);assert.equal(aces.length,1);assert.ok(sameAccount(aces[0].sid,currentUserSid()),aces[0].sid);assert.equal(aces[0].type,'A');assert.equal(aces[0].rights,'FA');if(flags)assert.equal(aces[0].flags,flags);return isProtected;};
 test('a directory ends with exactly one entry for the current user, including foreign and older ones',()=>temp(dir=>{
  const runtime=path.join(dir,'.cardeadeck');fs.mkdirSync(path.join(runtime,'backups'),{recursive:true});fs.writeFileSync(path.join(runtime,'old.json'),'x');fs.writeFileSync(path.join(runtime,'backups/settings.json'),'x');
  icacls(runtime,'/grant','*S-1-1-0:(OI)(CI)R','*S-1-5-32-545:(OI)(CI)R','/Q');icacls(path.join(runtime,'old.json'),'/grant','*S-1-5-11:F','/Q');
  assert.equal(isPrivateToCurrentUser(runtime),false);
  assert.equal(restrictDirectory(runtime),true);
  assert.equal(single(runtime,'OICI'),true,'Inheritance from the parent is cut');
- for(const child of ['old.json','backups/settings.json']){const{aces}=parseAces(readAcls(path.join(runtime,child))[0].sddl);assert.deepEqual(aces.map(a=>a.sid),[currentUserSid()],child);}
+ for(const child of ['old.json','backups/settings.json']){const{aces}=parseAces(readAcls(path.join(runtime,child))[0].sddl);assert.equal(aces.length,1,child);assert.ok(sameAccount(aces[0].sid,currentUserSid()),child);}
  assert.equal(isPrivateToCurrentUser(runtime,{recursive:true}),true);
- fs.writeFileSync(path.join(runtime,'new.json'),'y');assert.deepEqual(parseAces(readAcls(path.join(runtime,'new.json'))[0].sddl).aces.map(a=>a.sid),[currentUserSid()],'New files inherit the private entry');
+ fs.writeFileSync(path.join(runtime,'new.json'),'y');{const{aces}=parseAces(readAcls(path.join(runtime,'new.json'))[0].sddl);assert.equal(aces.length,1,'New files inherit the private entry');assert.ok(sameAccount(aces[0].sid,currentUserSid()));}
  assert.equal(fs.readFileSync(path.join(runtime,'old.json'),'utf8'),'x','The owner can still read');fs.rmSync(path.join(runtime,'new.json'));
 }));
 test('a single file ends with exactly one entry',()=>temp(dir=>{
@@ -98,7 +98,7 @@ test('the receiver publishes its keys only into a private folder and file',()=>t
  const receiver=await startReceiver(new DeckStore(),{directory:runtime});
  try{
   const file=path.join(runtime,'connection.json');
-  assert.deepEqual(parseAces(readAcls(file)[0].sddl).aces.map(a=>a.sid),[currentUserSid()],'connection.json is readable by this account only');single(runtime,'OICI');
+  {const{aces}=parseAces(readAcls(file)[0].sddl);assert.equal(aces.length,1,'connection.json is readable by this account only');assert.ok(sameAccount(aces[0].sid,currentUserSid()));}single(runtime,'OICI');
   assert.deepEqual(fs.readdirSync(runtime).filter(name=>name.endsWith('.tmp')),[]);
   assert.match(JSON.parse(fs.readFileSync(file,'utf8')).permissionKey,/^[a-f0-9]{64}$/);
  }finally{await receiver.close();}

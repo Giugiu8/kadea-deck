@@ -57,7 +57,8 @@ function refuseLinksInside(directory){
 // The runtime path can come from an environment variable. Removing inheritance from one of these
 // would lock other software and users out of it.
 // Real paths: short names such as RUNNER~1 and links in a parent folder must not change the verdict.
-const real=value=>{try{return fs.realpathSync.native(value);}catch{return path.resolve(value);}};
+// A folder that does not exist yet is judged by the real path of its nearest existing parent.
+const real=value=>{const absolute=path.resolve(value);try{return fs.realpathSync.native(absolute);}catch{const parent=path.dirname(absolute);return parent===absolute?absolute:path.join(real(parent),path.basename(absolute));}};
 export function refuseSystemLocation(directory,env=process.env){
  const resolved=real(directory),folded=resolved.toLowerCase(),separator=path.sep;
  // Only inside the user's profile: nobody else can have created the folder there and kept ownership of it.
