@@ -12,15 +12,17 @@ const {WebSocketServer}=require('ws');
 const root=fileURLToPath(new URL('..',import.meta.url));
 test('built plugin registers with the real SDK and renders live receiver events through the socket',{timeout:12_000},async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-sdk-'));
- const pluginRoot=path.join(dir,'test.sdPlugin'),bin=path.join(pluginRoot,'bin');fs.mkdirSync(bin,{recursive:true});
+ const appData=path.join(dir,'native-appdata'),pluginRoot=path.join(appData,'Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin'),bin=path.join(pluginRoot,'bin');fs.mkdirSync(bin,{recursive:true});
  for(const name of ['manifest.json','package.json'])fs.copyFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin',name),path.join(pluginRoot,name));
  fs.copyFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin/bin/plugin.mjs'),path.join(bin,'plugin.mjs'));
+ fs.cpSync(path.join(root,'dist/de.cardea.deck.sdPlugin/hooks'),path.join(pluginRoot,'hooks'),{recursive:true});
+ const settingsFile=path.join(dir,'.claude/settings.json'),foreign={env:{KEEP:'fixture'},statusLine:{type:'command',command:'echo preserved'}};fs.mkdirSync(path.dirname(settingsFile),{recursive:true});fs.writeFileSync(settingsFile,JSON.stringify(foreign));
  // Test-only opener records the route instead of launching an application.
  const helperSource=path.join(dir,'capture.cs');fs.writeFileSync(helperSource,'using System; using System.IO; class Capture { static int Main(string[] args) { File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"opened.txt"),String.Join("|",args)+"\\n"); return 0; } }');
  execFileSync(path.join(process.env.WINDIR,'Microsoft.NET/Framework64/v4.0.30319/csc.exe'),['/nologo','/target:winexe',`/out:${path.join(bin,'open.exe')}`,helperSource],{windowsHide:true});
  const server=new WebSocketServer({port:0,host:'127.0.0.1'});await once(server,'listening');
  const info={application:{font:'Segoe UI',language:'de',platform:'windows',platformVersion:'10',version:'7.6.0'},plugin:{uuid:'de.cardea.deck',version:'0.1.0.0'},devices:[{id:'test-device',name:'Test',size:{columns:5,rows:3},type:0}]};
- const p=spawn(process.execPath,[path.join(bin,'plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...process.env,LOCALAPPDATA:path.join(dir,'native-appdata'),USERPROFILE:dir,CARDEA_DECK_HOME:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ const p=spawn(process.execPath,[path.join(bin,'plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...process.env,APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir,CARDEA_DECK_HOME:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
  let stderr='',socket;const messages=[];p.stderr.on('data',b=>stderr+=b);
  const deadline=setTimeout(()=>p.kill(),7000);deadline.unref();
  try{
@@ -29,6 +31,16 @@ test('built plugin registers with the real SDK and renders live receiver events 
   await waitFor(()=>messages.some(m=>m.event==='registerPlugin'));
   socket.send(JSON.stringify({event:'willAppear',action:'de.cardea.deck.session',context:'test-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:0,row:0},isInMultiAction:false,settings:{slot:0},state:0}}));
   await waitFor(()=>messages.some(m=>m.event==='setImage'));
+  socket.send(JSON.stringify({event:'propertyInspectorDidAppear',action:'de.cardea.deck.session',context:'test-key',device:'test-device'}));
+  await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.context==='test-key'&&m.payload.type==='integrationStatus'));
+  const nonce=messages.find(m=>m.event==='sendToPropertyInspector'&&m.context==='test-key').payload.nonce;
+  const inspect=payload=>socket.send(JSON.stringify({event:'sendToPlugin',action:'de.cardea.deck.session',context:'test-key',payload}));
+  inspect({cmd:'setupClaude',nonce,plugin:'C:/must-not-use'});inspect({cmd:'setupClaude',nonce});
+  await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.claude==='installed'));
+  const integrated=JSON.parse(fs.readFileSync(settingsFile));assert.deepEqual(integrated.env,foreign.env);assert.deepEqual(integrated.statusLine,foreign.statusLine);assert.ok(integrated.hooks.PermissionRequest[0].hooks[0].command.includes(pluginRoot));
+  inspect({cmd:'removeClaude',nonce});await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.message==='done'&&m.payload.claude==='not_set_up'));
+  assert.deepEqual(JSON.parse(fs.readFileSync(settingsFile)),foreign);
+  socket.send(JSON.stringify({event:'propertyInspectorDidDisappear',action:'de.cardea.deck.session',context:'test-key',device:'test-device'}));
   const c=JSON.parse(fs.readFileSync(path.join(dir,'.cardeadeck/connection.json'),'utf8'));
   const result=await fetch(`http://127.0.0.1:${c.port}/event`,{method:'POST',headers:{'X-Cardea-Token':c.token},body:JSON.stringify({event:'UserPromptSubmit',sessionId:'sdk-fixture',eventId:'sdk-event',at:Date.now(),cwd:'G:\\TestProject'})});
   assert.equal(result.status,200);
@@ -82,5 +94,5 @@ test('built plugin registers with the real SDK and renders live receiver events 
   await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='codex-allow'));
   codexKey('session','codex-empty','willAppear',{slot:0});await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='codex-empty'));codexKey('session','codex-empty','keyDown',{slot:0});codexKey('session','codex-empty','keyUp',{slot:0});
   await waitFor(()=>fs.readFileSync(path.join(bin,'opened.txt'),'utf8').includes('codex://threads/new'));
- }finally{clearTimeout(deadline);if(p.exitCode===null){p.kill();await once(p,'exit');}socket?.terminate();await new Promise(resolve=>server.close(resolve));assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-sdk-'));fs.rmSync(dir,{recursive:true,force:true});}
+ }finally{clearTimeout(deadline);if(p.exitCode===null&&p.signalCode===null){const ended=once(p,'exit');p.kill();await ended;}socket?.terminate();await new Promise(resolve=>server.close(resolve));assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-sdk-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
