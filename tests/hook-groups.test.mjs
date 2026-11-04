@@ -94,6 +94,22 @@ test('status-only operation reports waiting for input without the approval hook'
  send('PostToolUse',1400,{tool:'Bash',toolUseId:'t1'});assert.equal(store.get('status-only').state,'working');
  send('Stop',1500);assert.equal(store.get('status-only').state,'unread');
 });
+test('portable setup adds the approval hook only with the flag and uninstall withdraws consent',async()=>{
+ const {createPlan,applyPlan,uninstall}=await import('../setup.mjs'),{profileTemplate,profileId}=await import('../profile.mjs'),{createHash}=await import('node:crypto');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-groups-')),write=(file,value)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,typeof value==='string'?value:JSON.stringify(value));};
+ const home=path.join(dir,'user'),appData=path.join(home,'AppData/Roaming'),directory=path.join(dir,'download'),settings=path.join(home,'.claude/settings.json'),runtime=path.join(home,'.cardeadeck');
+ try{
+  write(settings,foreign);const profile=profileTemplate(),base=path.join(directory,'profile-template',profileId);write(path.join(base,'manifest.json'),profile.manifest);profile.pages.forEach((p,i)=>write(path.join(base,'Profiles',profile.ids[i],'manifest.json'),p));write(path.join(base,'Profiles',profile.manifest.Pages.Default,'manifest.json'),{Controllers:[{Type:'Keypad',Actions:{}}]});
+  const plugin=path.join(directory,'de.cardea.deck.sdPlugin');write(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck',Version:'0.9.0.0'});write(path.join(plugin,'bin/plugin.mjs'),'// fixture');for(const name of ['bridge','statusline','permission-auth','receiver-client','runtime','tool-summary'])write(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
+  write(path.join(appData,'Elgato/StreamDeck/ProfilesV3/existing.sdProfile/manifest.json'),{Device:{Model:'20GBA9901',UUID:'fixture-device'}});
+  const files={};(function walk(root){for(const e of fs.readdirSync(root,{withFileTypes:true})){const file=path.join(root,e.name);if(e.isDirectory())walk(file);else files[path.relative(directory,file).replaceAll('\\','/')]=createHash('sha256').update(fs.readFileSync(file)).digest('hex');}})(directory);write(path.join(directory,'integrity.json'),{schema:1,version:'0.9.0',files});
+  const read=()=>JSON.parse(fs.readFileSync(settings));
+  applyPlan(createPlan({directory,home,appData}));assert.equal(ownOn(read(),approvalEvent).length,0);assert.equal(ownOn(read(),'Stop').length,1);assert.equal(readConfig(runtime).approvalsEnabled,false);
+  applyPlan(createPlan({directory,home,appData,approvals:true}));assert.equal(ownOn(read(),approvalEvent).length,1);assert.equal(readConfig(runtime).approvalsEnabled,true);assert.ok(readConfig(runtime).approvalsConsentAt);
+  applyPlan(createPlan({directory,home,appData}));assert.equal(ownOn(read(),approvalEvent).length,0,'An upgrade without the flag drops the hook');assert.equal(readConfig(runtime).approvalsEnabled,false);
+  applyPlan(createPlan({directory,home,appData,approvals:true}));uninstall({home,appData});assert.deepEqual(read(),foreign);assert.equal(readConfig(runtime).approvalsEnabled,false);
+ }finally{assert.ok(path.basename(dir).startsWith('cardea-groups-'));fs.rmSync(dir,{recursive:true,force:true});}
+});
 test('standalone recovery removes one group at a time',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-groups-')),file=path.join(dir,'.claude/settings.json');fs.mkdirSync(path.dirname(file));
  const run=group=>execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File',path.resolve('Remove-Claude-Hooks.ps1'),'-Group',group],{env:{...process.env,USERPROFILE:dir},windowsHide:true,encoding:'utf8'});

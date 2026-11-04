@@ -7,7 +7,7 @@ Read [THREAT-MODEL.md](../THREAT-MODEL.md) first. Claude Code's own reference: [
 ## Steps
 
 1. **Check the release** as described in [REPRODUCE.md](REPRODUCE.md).
-2. **Copy the hooks to a protected folder.** Take `de.cardea.deck.sdPlugin\hooks\` from the release and place all its files in, for example, `C:\Program Files\Cardea Deck\hooks\`. Users cannot change files there, unlike the plugin's copy under `%APPDATA%`. Plugin and hooks must have the same version, so update them together.
+2. **Copy the hooks to a protected folder.** Take `de.cardea.deck.sdPlugin\hooks\` from the release and place all its files in, for example, `C:\Program Files\Cardea Deck\hooks\`. Users cannot change files there, unlike the plugin's copy under `%APPDATA%`. The path must contain the word `Cardea`, because the plugin recognizes its managed hooks by it. Plugin and hooks must have the same version, so update them together.
 3. **Provide Node.js 20 or later** at a fixed machine-wide path, for example `C:\Program Files\nodejs\node.exe`.
 4. **Create the settings block.** The template [managed-settings.template.json](managed-settings.template.json) contains the status hooks and `allowManagedHooksOnly`. For other paths or options, use the generator from the portable download, which only prints:
 

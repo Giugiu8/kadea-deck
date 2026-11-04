@@ -123,6 +123,7 @@ export function uninstall({home,appData,node=process.execPath,host=()=>{}}){
  const settings=localPath(home,path.join(home,'.claude/settings.json')),before=digest(settings),output=mergeHooks(before?json(settings):{},{node,plugin,remove:true});
  const lock=path.join(runtime,'install.lock'),handle=fs.openSync(lock,'wx'),archive=path.join(runtime,'uninstalled-'+randomUUID()),undo=[];let stopped=false;
  try{fs.mkdirSync(archive,{recursive:true,mode:0o700});stopped=true;host('Stop');if(digest(settings)!==before)throw Error('Claude settings changed; retry uninstall');const item=preserve(settings,archive,undo);atomic(settings,JSON.stringify(output,null,2)+'\n');item.written=digest(settings);
+  {const file=path.join(runtime,'config.json');if(fs.existsSync(file)){preserve(file,archive,undo);atomic(file,JSON.stringify({...json(file),approvalsEnabled:false},null,2)+'\n');}}
   for(const target of [plugin,profile,receipt])preserve(target,archive,undo,true);
   atomic(path.join(archive,'locations.json'),JSON.stringify(undo));return archive;
  }catch(error){rollback(undo);throw error;}finally{try{if(stopped)host('Start');}finally{fs.closeSync(handle);fs.unlinkSync(lock);}}

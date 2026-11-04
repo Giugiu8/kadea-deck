@@ -12,7 +12,7 @@ export function readManagedState(root){
  const load=file=>{try{const raw=fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'');present=true;documents.push(JSON.parse(raw));}catch(error){if(error.code!=='ENOENT')present=true;}};
  load(path.join(root,'managed-settings.json'));
  try{for(const name of fs.readdirSync(path.join(root,'managed-settings.d')).sort())if(name.endsWith('.json'))load(path.join(root,'managed-settings.d',name));}catch(error){if(error.code!=='ENOENT')present=true;}
- const deployed=event=>documents.some(doc=>Array.isArray(doc?.hooks?.[event])&&doc.hooks[event].some(group=>Array.isArray(group?.hooks)&&group.hooks.some(hook=>JSON.stringify(hook??'').includes('bridge.cjs'))));
+ const deployed=event=>documents.some(doc=>Array.isArray(doc?.hooks?.[event])&&doc.hooks[event].some(group=>Array.isArray(group?.hooks)&&group.hooks.some(hook=>/cardea[^"]*bridge\.cjs/i.test(JSON.stringify(hook??'')))));
  const status=statusEvents.some(deployed),approval=deployed(approvalEvent),only=documents.some(doc=>doc?.allowManagedHooksOnly===true);
  return{present,only,status,approval,active:only||status||approval};
 }

@@ -10,6 +10,8 @@ export const DEFAULT_HOOKS='C:\\Program Files\\Cardea Deck\\hooks';
 const checked=value=>{if(typeof value!=='string'||/["\r\n%$`!&|<>^]/.test(value)||!path.win32.isAbsolute(value))throw Error('Unsupported path: '+value);return value;};
 export function managedBlock({node=DEFAULT_NODE,hooks=DEFAULT_HOOKS,approvals=false,statusLine=false,shellForm=false,onlyManaged=true}={}){
  checked(node);checked(hooks);
+ // The plugin recognizes its managed hooks by this name in the path.
+ if(!/cardea/i.test(hooks))throw Error('The hook folder path must contain "Cardea": '+hooks);
  const bridge=path.win32.join(hooks,'bridge.cjs');
  // Exec form runs without any shell, so it also works on PCs without Git Bash.
  const entry=(event,timeout)=>[{hooks:[shellForm?{type:'command',command:`"${node}" "${bridge}" ${event}`,timeout}:{type:'command',command:node,args:[bridge,event],timeout}]}];

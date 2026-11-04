@@ -24,6 +24,11 @@ test('the block has status hooks and the lock, and approval only on request',()=
 test('unsafe or relative paths are refused',()=>{
  for(const bad of ['node.exe','C:\\a"b\\node.exe','C:\\%TEMP%\\node.exe','C:\\a&b\\node.exe'])assert.throws(()=>managedBlock({node:bad}),/Unsupported path/);
 });
+test('another product\'s bridge in managed settings does not count as Cardea',()=>temp(dir=>{
+ put(path.join(dir,'managed-settings.json'),{hooks:{Stop:[{hooks:[{type:'command',command:'node',args:['C:\\Other\\bridge.cjs','Stop']}]}]}});
+ assert.equal(readManagedState(dir).active,false);
+ assert.throws(()=>managedBlock({hooks:'C:\\Other\\hooks'}),/must contain/);
+}));
 test('the shipped template is what the generator prints for its defaults',()=>{
  assert.deepEqual(JSON.parse(fs.readFileSync('docs/managed-settings.template.json','utf8')),managedBlock());
  assert.deepEqual(JSON.parse(execFileSync(process.execPath,['managed-settings.mjs'],{encoding:'utf8',windowsHide:true})),managedBlock());
