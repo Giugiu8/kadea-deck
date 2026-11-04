@@ -63,7 +63,7 @@ test('risky tools stay out even when a configuration lists them',()=>{
 function temp(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-policy-'));return Promise.resolve(fn(dir)).finally(()=>{assert.ok(path.basename(dir).startsWith('cardea-policy-'));fs.rmSync(dir,{recursive:true,force:true});});}
 test('policy defaults to off and uses a validated configurable allowlist',()=>temp(dir=>{
  const machineFile=path.join(dir,'machine.json'),load=()=>loadPolicy({directory:dir,machineFile});
- assert.deepEqual(load(),{enabled:false,lockedOff:false,allowlist:[...DEFAULT_ALLOWLIST]});
+ assert.deepEqual(load(),{enabled:false,codexEnabled:false,lockedOff:false,allowlist:[...DEFAULT_ALLOWLIST]});
  writeConfig(dir,{approvalsEnabled:true,allowlist:['Read','mcp__docs__search','Bash','bad name*','Write','Monitor']});
  assert.deepEqual(load().allowlist,['Read','mcp__docs__search']);assert.equal(load().enabled,true);
  fs.writeFileSync(path.join(dir,'config.json'),'{broken');assert.equal(load().enabled,false,'A damaged configuration means off');
@@ -214,4 +214,52 @@ test('browser requests are refused on every route',()=>temp(async dir=>{
  const receiver=await startReceiver(new DeckStore(),{directory:dir});
  try{for(const route of ['/health','/identity','/status','/event']){const response=await fetch('http://127.0.0.1:'+receiver.port+route,{headers:{Origin:'https://example.test'}});assert.equal(response.status,403,route);}}
  finally{await receiver.close();}
+}));
+
+test('a session folder with odd characters blocks a relative request too',()=>{
+ for(const[cwd,reason]of [['C:\\work\\safe'+String.fromCodePoint(0x202e)+'txt','unusual_characters'],['C:\\work  two','unusual_characters'],['C:\\'+String.fromCodePoint(0x430)+'\\x','unusual_characters'],['C:\\work~1','unusual_path']]){
+  assert.equal(summarizeTool('Read',{file_path:'a.txt'},cwd).blocked,reason,cwd);assert.equal(summarizeTool('Grep',{pattern:'a',path:'.'},cwd).blocked,reason,cwd);assert.equal(summarizeTool('LS',{path:'.'},cwd).blocked,reason,cwd);
+ }
+});
+test('reserved device names and short names stay in the dialog',()=>{
+ for(const value of ['C:\\work\\CON','C:\\work\\aux.txt','C:\\work\\com1','C:\\work\\LPT9.log','C:\\work\\COM¹','C:\\SECRET~1.TXT'])assert.equal(summarizeTool('Read',{file_path:value}).blocked,'unusual_path',value);
+ assert.equal(summarizeTool('Read',{file_path:'C:\\work\\console.txt'}).blocked,undefined);
+});
+test('fields the key does not show keep a request in the dialog',()=>{
+ for(const[tool,input]of [['Grep',{pattern:'TODO',path:'C:\\a',glob:'**/.ssh/*'}],['Grep',{pattern:'a',path:'C:\\a','-C':100000}],['Grep',{pattern:'a',path:'C:\\a',multiline:true}],['Read',{file_path:'C:\\a.txt',extra:'\\\\host\\x'}],['Read',{file_path:'C:\\a.txt',offset:'x'}],['LS',{path:'C:\\a',ignore:['x']}]])assert.equal(summarizeTool(tool,input).blocked,'incomplete_display',JSON.stringify(input));
+ assert.equal(summarizeTool('Read',{file_path:'C:\\a.txt',offset:10,limit:20}).blocked,undefined);assert.equal(summarizeTool('Grep',{pattern:'a',path:'C:\\a',output_mode:'content','-n':true,head_limit:50}).blocked,undefined);
+});
+test('a search must be shown whole and unredacted',()=>{
+ assert.equal(summarizeTool('Grep',{pattern:'token=x|BEGIN.*PRIVATE',path:'C:\\proj'}).blocked,'incomplete_display');
+ assert.equal(summarizeTool('Glob',{pattern:'password=x*',path:'C:\\a'}).blocked,'incomplete_display');
+ assert.equal(summarizeTool('Grep',{pattern:'a'.repeat(60),path:'C:\\a'}).blocked,'incomplete_display');
+ for(const pattern of ['{..,x}/**','{C:/Windows,x}/**','{//evil/share,x}/**'])assert.equal(summarizeTool('Glob',{pattern,path:'C:\\a'}).blocked,'unusual_path',pattern);
+ assert.equal(summarizeTool('Glob',{pattern:'**/*.{ts,js}',path:'C:\\a'}).blocked,undefined);
+});
+test('a very long path reaches neither key nor inspector',()=>{
+ assert.equal(summarizeTool('Read',{file_path:'C:\\'+'a\\'.repeat(200)+'b.txt'}).blocked,'incomplete_display');
+});
+test('the hook prints only its own decision, whatever a signed reply adds',()=>temp(async dir=>{
+ const http=await import('node:http'),{randomBytes,createHmac}=await import('node:crypto');
+ const key=randomBytes(32).toString('hex'),token=randomBytes(32).toString('hex'),mac=(...parts)=>createHmac('sha256',Buffer.from(key,'hex')).update(JSON.stringify(parts)).digest('hex');
+ const reply=JSON.stringify({continue:false,systemMessage:'x',hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:'allow',updatedInput:{file_path:'C:\\other'},updatedPermissions:[{type:'addRules'}]}}});
+ const server=http.createServer(async(req,res)=>{for await(const _ of req);const nonce=req.headers['x-cardea-nonce'];if(req.url==='/identity'){res.setHeader('X-Cardea-Proof',mac('cardea-receiver-identity-v1',nonce));res.end('{}');return;}let body='';res.setHeader('X-Cardea-Proof','');res.removeHeader('X-Cardea-Proof');res.setHeader('X-Cardea-Proof',mac('cardea-permission-response-v1',nonce,req.body??lastBody,200,reply));res.end(reply);});
+ let lastBody='';server.prependListener('request',req=>{const chunks=[];req.on('data',c=>chunks.push(c));req.on('end',()=>{lastBody=Buffer.concat(chunks).toString();});});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+  fs.writeFileSync(path.join(dir,'connection.json'),JSON.stringify({schema:2,port:server.address().port,token,permissionKey:key}));
+  const result=await hook(dir,{session_id:'s',cwd:'C:\\P',tool_name:'Read',tool_input:{file_path:'C:\\a.txt'}});
+  assert.deepEqual(JSON.parse(result.stdout),{hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:'allow'}}});
+ }finally{await new Promise(resolve=>server.close(resolve));}
+}));
+test('nothing waits when no key could answer it',()=>temp(async dir=>{
+ const store=new DeckStore(),receiver=await startReceiver(store,{directory:dir,policy:allowed,holdable:()=>false,timeoutMs:30_000});
+ try{assert.deepEqual(await hook(dir,{session_id:'unseen',cwd:'C:\\P',tool_name:'Read',tool_input:{file_path:'C:\\a.txt'}}),{code:0,stdout:''});assert.equal(receiver.broker.pending.size,0);assert.match(fs.readFileSync(path.join(dir,'decisions.jsonl'),'utf8'),/no_key_shown/);}
+ finally{await receiver.close();}
+}));
+test('Codex approvals have their own off-by-default consent and honor the machine policy',()=>temp(dir=>{
+ const machineFile=path.join(dir,'machine.json'),load=()=>loadPolicy({directory:dir,machineFile});
+ assert.equal(load().codexEnabled,false);writeConfig(dir,{approvalsEnabled:true});assert.equal(load().codexEnabled,false,'Claude consent is not Codex consent');
+ writeConfig(dir,{approvalsEnabled:false,codexApprovalsEnabled:true});assert.equal(load().codexEnabled,true);assert.equal(load().enabled,false);
+ fs.writeFileSync(machineFile,'{"approvalsAllowed":false}');assert.equal(load().codexEnabled,false);
 }));

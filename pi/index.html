@@ -9,6 +9,11 @@
 <small>Off by default. A key can then allow low-risk tools only (<span id="allowlist">Read, Grep, Glob, LS</span>). Commands, file changes and network access always stay in Claude's own dialog.</small>
 <label id="consent-field"><input id="approvalConsent" type="checkbox"> I want to approve Claude requests with a Stream Deck key</label>
 <button id="enableApprovals" disabled>Enable key approvals</button><button id="disableApprovals" class="secondary" disabled>Disable key approvals</button>
+<h2>Codex approval by key (optional)</h2>
+<p id="codex-state"></p>
+<small>Off by default. Codex tells the key only the kind of request, not the command or file. Check the chat before you hold the key.</small>
+<label id="codex-consent-field"><input id="codexConsent" type="checkbox"> I want to approve Codex requests with a key without seeing their content</label>
+<button id="enableCodexApprovals" disabled>Enable Codex key approvals</button><button id="disableCodexApprovals" class="secondary" disabled>Disable Codex key approvals</button>
 <button id="removeClaude" class="secondary" disabled>Remove all Claude hooks</button></div>
 <small id="setup-help">Set up Claude adds status hooks only. Settings are backed up. Existing hooks and custom status lines are preserved. Start a new Claude chat after setup.</small></section>
 <label id="slot-field">Chat slot (1–6)<input id="slot" type="number" min="1" max="6" value="1"></label>

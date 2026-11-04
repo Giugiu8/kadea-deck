@@ -121,5 +121,9 @@ test('standalone recovery removes one group at a time',()=>{
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'.cardeadeck/config.json'))).approvalsEnabled,false,'Consent is withdrawn with the hook');
   run('Status');assert.deepEqual(read().hooks,foreign.hooks);assert.deepEqual(read().statusLine,foreign.statusLine);
   fs.writeFileSync(file,JSON.stringify(both));run('Status');assert.equal(ownOn(read(),approvalEvent).length,1);assert.equal(ownOn(read(),'Stop').length,0);
+  // A lock from a process that is gone must not block recovery.
+  fs.writeFileSync(file,JSON.stringify(both));fs.writeFileSync(path.join(dir,'.cardeadeck/integrations.lock'),JSON.stringify({pid:999999,at:1}));run('All');assert.deepEqual(read().hooks,foreign.hooks);
+  // Consent is withdrawn even when no settings file is left.
+  fs.unlinkSync(file);fs.writeFileSync(path.join(dir,'.cardeadeck/config.json'),JSON.stringify({schema:1,approvalsEnabled:true}));run('All');assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'.cardeadeck/config.json'))).approvalsEnabled,false);
  }finally{assert.ok(path.basename(dir).startsWith('cardea-groups-'));fs.rmSync(dir,{recursive:true,force:true});}
 });

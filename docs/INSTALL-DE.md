@@ -21,6 +21,8 @@ Standardmäßig aus. Wer sie möchte, setzt in **Approval by key** das Häkchen 
 
 **Disable key approvals** nimmt nur diesen Hook wieder heraus, **Remove status hooks** nur die Status-Hooks, **Remove all Claude hooks** beide.
 
+**Codex-Freigaben:** Die Approve-Taste für Codex ist ebenfalls aus und hat ein eigenes Häkchen, denn Codex meldet der Taste nur die Art der Anfrage, nicht den Befehl. Vor dem Halten also in den Chat schauen.
+
 ## Verwaltete Einstellungen
 
 Für IT-Administration, wenn `~/.claude/settings.json` unverändert bleiben soll oder `allowManagedHooksOnly` gilt. Ausführlich: [MANAGED-SETTINGS.md](MANAGED-SETTINGS.md).

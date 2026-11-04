@@ -27,8 +27,9 @@ const networkPath=value=>/^\s*[\\/]{2}/.test(value)||/^\s*[a-z][a-z0-9+.-]*:[\\/
 // Forms whose real target cannot be told from the text. Windows ignores dots and spaces at the end of a
 // name, a colon after the drive selects a hidden stream, and ~, % and $ may be expanded by something else.
 function unusualPath(value){
- if(/^~|[%$*?"<>|]/.test(value)||/^[\\/]/.test(value)||/^[A-Za-z]:(?![\\/])/.test(value)||value.indexOf(':',2)>=0||value.lastIndexOf(':')>1)return true;
- return value.split(/[\\/]/).some(part=>part!=='.'&&part!=='..'&&/[. ]$/.test(part));
+ if(/[~%$*?"<>|]/.test(value)||/^[\\/]/.test(value)||/^[A-Za-z]:(?![\\/])/.test(value)||value.indexOf(':',2)>=0||value.lastIndexOf(':')>1)return true;
+ // Reserved device names, with or without an extension, are no files.
+ return value.split(/[\\/]/).some(part=>part!=='.'&&part!=='..'&&(/[. ]$/.test(part)||/^(?:con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³])(?:\.|$)/i.test(part)));
 }
 // The absolute path this resolves to, or a reason why that cannot be known.
 function locate(value,cwd){
@@ -36,11 +37,18 @@ function locate(value,cwd){
  if(networkPath(value))return{blocked:'network_path',text:tidy(value)};
  if(!plain(value))return{blocked:'unusual_characters',text:tidy(value)};
  if(unusualPath(value))return{blocked:'unusual_path',text:value};
- if(/^[A-Za-z]:[\\/]/.test(value))return{text:path.win32.normalize(value)};
+ if(/^[A-Za-z]:[\\/]/.test(value)){const text=path.win32.normalize(value);return text.length>MAX?{blocked:'incomplete_display',text}:{text};}
  const base=text_(cwd);
- if(!/^[A-Za-z]:[\\/]/.test(base)||base.length>SCAN)return{blocked:'relative_path',text:value};
+ if(!/^[A-Za-z]:[\\/]/.test(base)||base.length>SCAN)return{blocked:'relative_path',text:tidy(value)};
+ // The session folder ends up on the key too, so it has to pass the same checks.
+ if(!plain(base))return{blocked:'unusual_characters',text:tidy(path.win32.resolve(base,value))};
+ if(unusualPath(base))return{blocked:'unusual_path',text:tidy(path.win32.resolve(base,value))};
  return{text:path.win32.resolve(base,value)};
 }
+// Fields of the tools a key can answer that do not widen what the key shows. Anything else, such as a
+// Grep glob or context option, means the key would not be telling the whole story.
+const KNOWN_INPUT={Read:['file_path','offset','limit'],LS:['path'],Glob:['pattern','path'],Grep:['pattern','path','output_mode','head_limit','offset','-i','-n','case_insensitive']};
+const onlyKnownInput=(tool,input)=>!Object.hasOwn(KNOWN_INPUT,tool)||Object.entries(input).every(([key,value])=>KNOWN_INPUT[tool].includes(key)&&(['string','number','boolean'].includes(typeof value))&&(typeof value!=='string'||['file_path','path','pattern','output_mode'].includes(key)));
 const FIELDS={
  Bash:['text','command'],PowerShell:['text','command'],
  Read:['path','file_path'],Write:['path','file_path'],Edit:['path','file_path'],MultiEdit:['path','file_path'],
@@ -58,11 +66,15 @@ function summarizeSearch(tool,input,cwd){
  // A file pattern is a path too. This keeps it inside the folder the key names.
  if(!blocked&&tool==='Glob'){
   if(networkPath(pattern))blocked='network_path';
-  else if(/^[A-Za-z]:|^[\\/~]|[%$]/.test(pattern)||pattern.split(/[\\/]/).includes('..'))blocked='unusual_path';
+  else if(/^[A-Za-z]:|^[\\/~]|[%$]/.test(pattern)||pattern.split(/[\\/]/).includes('..')||/\{[^}]*(?:\.\.|[\\/:])/.test(pattern))blocked='unusual_path';
  }
  // The folder comes first: a long pattern must not push it off the key.
- const place=folder.text.length>28?'…'+folder.text.slice(-27):folder.text;
- return{kind:'text',text:[place,redact(shownPattern)].filter(Boolean).join(' : '),...(blocked?{blocked}:{})};
+ const place=folder.text.length>28?'…'+folder.text.slice(-27):folder.text,shown=redact(shownPattern);
+ // Redaction must not hide what a search looks for, and all of the pattern must fit.
+ if(!blocked&&shown!==shownPattern)blocked='incomplete_display';
+ const text=[place,shown].filter(Boolean).join(' : ');
+ if(!blocked&&text.length>DISPLAY)blocked='incomplete_display';
+ return{kind:'text',text,...(blocked?{blocked}:{})};
 }
 function summarizeUnknown(input){
  // Tools this code knows nothing about: everything in the input must be visible, or none of it counts.
@@ -92,7 +104,8 @@ function summarizeTool(tool,input,cwd){
  }
  else summary=summarizeUnknown(input);
  if(!summary?.text)return null;
+ if(!summary.blocked&&!onlyKnownInput(tool,input))summary.blocked='incomplete_display';
  if(summary.text.length>MAX)summary.text=summary.kind==='path'?'…'+summary.text.slice(-MAX):summary.text.slice(0,MAX)+'…';
  return summary;
 }
-module.exports={summarizeTool,MAX,DISPLAY};
+module.exports={summarizeTool,plain,MAX,DISPLAY};

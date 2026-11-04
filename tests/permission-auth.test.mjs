@@ -117,7 +117,7 @@ for(const [label,executable]of [
    await t.test('chunked UTF-8 is verified after complete byte assembly',async()=>{
     const response=JSON.stringify({hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:'deny',message:'Prüfung'}}});
     reply=({res,body,nonce})=>{res.setHeader('X-Cardea-Proof',sign(permissionKey,nonce,body,200,response));const bytes=Buffer.from(response),split=bytes.indexOf(Buffer.from('ü'))+1;res.write(bytes.subarray(0,split));setTimeout(()=>res.end(bytes.subarray(split)),10);};
-    assert.deepEqual(await hook(directory,executable),{code:0,stdout:response,stderr:''});
+    assert.deepEqual(await hook(directory,executable),{code:0,stdout:JSON.stringify({hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:'deny',message:'Declined on Stream Deck.'}}}),stderr:''});
    });
    await t.test('unverified identity receives no permission, event or quota metadata',async()=>{
     const before=posts;

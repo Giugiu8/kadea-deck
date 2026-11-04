@@ -30,7 +30,7 @@ export function profileTemplate({version='0.8.0',uuid=randomUUID}={}){
  for(let p=0;p<4;p++){for(let col=0;col<4;col++)a[p][`${col},2`]=core('profile.rotate',{PageIndex:col+1});a[p]['4,2']=p===0?own('quota'):native('usage');}
  return{manifest:{AppIdentifier:null,Device:{Model:'20GBA9901',UUID:''},Name:'Cardea Deck',Pages:{Current:ids[0],Default:defaultId,Pages:ids},Version:'3.0'},ids,pages,links};
 }
-function renderProfile(destination,version,render){
+export function renderProfile(destination,version,render){
  const profile=profileTemplate({version});fs.mkdirSync(destination,{recursive:true});
  for(let p=0;p<4;p++){
   const directory=path.join(destination,'Profiles',profile.ids[p]);fs.mkdirSync(path.join(directory,'Images'),{recursive:true});const actions=profile.pages[p].Controllers[0].Actions;

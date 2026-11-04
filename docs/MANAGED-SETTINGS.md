@@ -53,6 +53,8 @@ Or limit the tools:
 
 `approvalsAllowed: false` turns key approvals off. An `allowlist` here is intersected with the user's list. **A file that is present but damaged or has wrong types turns key approvals off as well.**
 
+This also locks Codex Approve keys, which have an opt-in of their own and stay off without it. The usual path `C:\ProgramData\CardeaDeck\policy.json` always counts, whatever `%ProgramData%` says.
+
 The default list is `Read`, `Grep`, `Glob`, `LS`. Only exact MCP tool names of up to 17 characters can be added, through `"allowlist"` in a user's `config.json`; what such a tool does is that person's decision, and your `allowlist` can exclude it. Built-in tools outside the default list can never be approved by key, in any configuration.
 
 **How firm this is:** a hook in your protected folder reads the policy itself before it prints an allow. A program under the user's own account can still reach Claude by other means, so if key approvals must not exist, do not deploy `--approvals`.

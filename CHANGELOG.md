@@ -11,6 +11,8 @@
 - Approval keys and the Property Inspector show the tool and a shortened, redacted summary of the request. Requests without displayable content stay in the dialog.
 - `bin/open.exe` is gone: links open through Windows' `explorer.exe`.
 
+- Codex Approve keys are off until a separate opt-in, because Codex shows the key only the kind of request.
+
 **Added**
 
 - `decisions.jsonl`: time, session, tool and outcome only, bounded and rotated.

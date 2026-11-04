@@ -2,7 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {approvalEvent,statusEvents} from './claude-hooks.mjs';
-export const managedRoot=(env=process.env)=>path.join(env.ProgramFiles||'C:\\Program Files','ClaudeCode');
+// Claude Code documents this exact path. It does not depend on an environment variable, and neither does this.
+export const managedRoot=()=>'C:\\Program Files\\ClaudeCode';
 // A file that exists but cannot be read still counts as present, as it does for Claude Code: this
 // software must then stay out of the user's settings.
 export function readManagedState(root=managedRoot()){

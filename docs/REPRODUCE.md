@@ -9,7 +9,7 @@ The first release made this way is still to come. Version `v0.8.0-beta.1` was bu
 Requires the [GitHub CLI](https://cli.github.com/).
 
 ```powershell
-gh attestation verify .\Cardea-Deck-0.9.0.streamDeckPlugin --repo Giugiu8/cardea-deck
+gh attestation verify .\Cardea-Deck-0.9.0.streamDeckPlugin --repo Giugiu8/cardea-deck --signer-workflow Giugiu8/cardea-deck/.github/workflows/release.yml
 ```
 
 This shows that the file came from this repository's workflow, and from which commit. The SBOM is the release file `Cardea-Deck-<version>.cdx.json` (CycloneDX, runtime dependencies only) and is attested as well.
@@ -26,9 +26,10 @@ npm ci --ignore-scripts
 node reproduce.mjs ..\Cardea-Deck-0.9.0.streamDeckPlugin
 node reproduce.mjs ..\Cardea-Deck-0.9.0-advanced-portable.zip
 node reproduce.mjs ..\Remove-Claude-Hooks.ps1
+node reproduce.mjs ..\Cardea-Deck-0.9.0.cdx.json
 ```
 
-`reproduce.mjs` rebuilds the plugin code into a temporary folder and compares, byte for byte, `bin/plugin.mjs`, all `hooks/`, all `pi/`, `manifest.json`, `package.json` and `integrity.json`. Extra files in those folders count as a difference. It also compares what each key of the bundled profile does (see below). For the portable download it checks each script in it against this checkout as well. Exit code 0 means identical, 1 a difference, 2 a failed rebuild. It also accepts an unpacked folder, such as an installed plugin:
+`reproduce.mjs` rebuilds the plugin code into a temporary folder and compares, byte for byte, `bin/plugin.mjs`, all `hooks/`, all `pi/`, `manifest.json`, `package.json` and `integrity.json`. Any file the release does not account for counts as a difference, and an archive with ambiguous names (differing only in case, odd path forms, duplicate entries) is refused. It also compares what each key of the bundled profile does (see below). For the portable download it checks every file in it against this checkout as well, except the release's own generated lists. For an SBOM it compares the named components with the lockfile. Give it one file at a time. Exit code 0 means identical, 1 a difference, 2 a failed rebuild. It also accepts an unpacked folder, such as an installed plugin:
 
 ```powershell
 node reproduce.mjs "$env:APPDATA\Elgato\StreamDeck\Plugins\de.cardea.deck.sdPlugin"
@@ -48,9 +49,9 @@ What makes this work: exact dependencies from `package-lock.json`, a pinned esbu
 
 The key images and the zipped default profile (`imgs/`, `profiles/`), and so the `.streamDeckPlugin` archive as a whole: compare its contents, not the file's own hash. Image bytes depend on the ImageMagick version, zip files carry timestamps, and the profile gets new random IDs.
 
-A profile is no plain picture: its keys can open websites and programs. So the comparison reads what each key is assigned to and fails if that differs from the source. Images are data and do not execute. They and the archive are covered by the attestation only.
+A profile is no plain picture: its keys can open websites and programs. So the comparison reads the whole profile, leaving out only random IDs and image bytes, and fails if anything differs from the source or if the archive holds anything but the images its keys name. Images are data and do not execute. They and the archive are covered by the attestation only.
 
-ImageMagick comes from Chocolatey without a pinned version and runs in the build job. That job has no signing rights, and the code it produces must match the independent rebuild, but the images are not checked this way.
+ImageMagick comes from Chocolatey without a pinned version and runs in the build job. That job has no signing rights, and the code it produces must match the independent rebuild, but the image bytes are not checked this way.
 
 ## Signing
 

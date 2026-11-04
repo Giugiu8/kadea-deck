@@ -56,19 +56,21 @@ function refuseLinksInside(directory){
 }
 // The runtime path can come from an environment variable. Removing inheritance from one of these
 // would lock other software and users out of it.
+// Real paths: short names such as RUNNER~1 and links in a parent folder must not change the verdict.
+const real=value=>{try{return fs.realpathSync.native(value);}catch{return path.resolve(value);}};
 export function refuseSystemLocation(directory,env=process.env){
- const resolved=path.resolve(directory),folded=resolved.toLowerCase(),separator=path.sep;
+ const resolved=real(directory),folded=resolved.toLowerCase(),separator=path.sep;
  // Only inside the user's profile: nobody else can have created the folder there and kept ownership of it.
- const homes=[env.USERPROFILE,os.homedir()].filter(Boolean).map(value=>path.resolve(value).toLowerCase()+separator);
+ const homes=[env.USERPROFILE,os.homedir()].filter(Boolean).map(value=>real(value).toLowerCase()+separator);
  if(!homes.some(home=>folded.startsWith(home)))throw Error('protected_path');
  if(path.parse(resolved).root.toLowerCase()===folded+separator||path.parse(resolved).root.toLowerCase()===folded)throw Error('protected_path');
  const inside=folded.endsWith(separator)?folded:folded+separator;
  for(const name of ['USERPROFILE','SystemRoot','WINDIR','ProgramFiles','ProgramFiles(x86)','ProgramData','APPDATA','LOCALAPPDATA','TEMP','PUBLIC']){
   const value=env[name];if(!value)continue;
-  const other=path.resolve(value).toLowerCase();
+  const other=real(value).toLowerCase();
   if(other===folded||(other+separator).startsWith(inside))throw Error('protected_path');
  }
- for(const value of [os.homedir(),os.tmpdir()]){const other=path.resolve(value).toLowerCase();if(other===folded||(other+separator).startsWith(inside))throw Error('protected_path');}
+ for(const value of [os.homedir(),os.tmpdir()]){const other=real(value).toLowerCase();if(other===folded||(other+separator).startsWith(inside))throw Error('protected_path');}
 }
 // Failures throw: the caller must then not publish secrets into this location.
 export function restrictFile(target){

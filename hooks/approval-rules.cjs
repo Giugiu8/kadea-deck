@@ -9,6 +9,8 @@ const isMcpTool=name=>typeof name==='string'&&name.length<=TOOL_LABEL&&/^mcp__[A
 // Read-only built-ins, or one exact MCP tool that a person named on purpose.
 const eligibleTool=name=>DEFAULT_ALLOWLIST.includes(name)||isMcpTool(name);
 const machinePolicyFile=(env=process.env)=>path.join(env.ProgramData||'C:\\ProgramData','CardeaDeck','policy.json');
+// The usual place counts too, so changing an environment variable cannot hide a policy.
+const machinePolicyFiles=(env=process.env)=>[...new Set([machinePolicyFile(env),'C:\\ProgramData\\CardeaDeck\\policy.json'])];
 // A policy that is present but damaged means off: an administrator's restriction must not vanish with a typo.
 function readMachinePolicy(file=machinePolicyFile()){
  let raw;
@@ -22,9 +24,13 @@ function readMachinePolicy(file=machinePolicyFile()){
   return{present:true,valid:true,approvalsAllowed:value.approvalsAllowed,allowlist:value.allowlist};
  }catch{return{present:true,valid:false};}
 }
+function readMachinePolicies(files=machinePolicyFiles()){
+ const all=files.map(readMachinePolicy),lists=all.filter(policy=>Array.isArray(policy.allowlist)).map(policy=>policy.allowlist);
+ return{present:all.some(policy=>policy.present),valid:all.every(policy=>policy.valid),approvalsAllowed:all.some(policy=>policy.approvalsAllowed===false)?false:undefined,allowlist:lists.length?lists.reduce((a,b)=>a.filter(name=>b.includes(name))):undefined};
+}
 const machineBlocks=(policy,tool)=>!policy.valid||policy.approvalsAllowed===false||(Array.isArray(policy.allowlist)&&!policy.allowlist.includes(tool));
 // The hook's own last word before it prints an allow, whatever the receiver answered.
-function hookMayAllow(tool,summary,policy=readMachinePolicy()){
+function hookMayAllow(tool,summary,policy=readMachinePolicies()){
  return eligibleTool(tool)&&!!summary?.text&&!summary.blocked&&!machineBlocks(policy,tool);
 }
-module.exports={DEFAULT_ALLOWLIST,TOOL_LABEL,eligibleTool,machinePolicyFile,readMachinePolicy,machineBlocks,hookMayAllow};
+module.exports={DEFAULT_ALLOWLIST,TOOL_LABEL,eligibleTool,machinePolicyFile,machinePolicyFiles,readMachinePolicy,readMachinePolicies,machineBlocks,hookMayAllow};

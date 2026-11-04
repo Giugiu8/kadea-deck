@@ -21,7 +21,7 @@ process.stdin.on('end',async()=>{
     const data=quota?raw.rate_limits:{event,at,eventId,sessionId:raw.session_id,cwd:raw.cwd,tool:raw.tool_name,toolUseId:raw.tool_use_id,notificationType:raw.notification_type,source:raw.source,...(permission?{summary}:{})};
     const body=JSON.stringify(data??{});
     const response=await requestReceiver(c,{route:quota?'/quota':permission?'/permission':'/event',body,permission});
-    if(permission&&response?.status===200){const d=JSON.parse(response.body);const behavior=d.hookSpecificOutput?.decision?.behavior;if(d.hookSpecificOutput?.hookEventName==='PermissionRequest'&&(behavior==='deny'||(behavior==='allow'&&hookMayAllow(raw.tool_name,summary))))process.stdout.write(JSON.stringify(d));}
+    if(permission&&response?.status===200){const d=JSON.parse(response.body);const behavior=d.hookSpecificOutput?.decision?.behavior;if(d.hookSpecificOutput?.hookEventName==='PermissionRequest'&&(behavior==='deny'||(behavior==='allow'&&hookMayAllow(raw.tool_name,summary))))process.stdout.write(JSON.stringify({hookSpecificOutput:{hookEventName:'PermissionRequest',decision:behavior==='deny'?{behavior,message:'Declined on Stream Deck.'}:{behavior}}}));}
   }catch{process.exit(0);}
   process.exit(0);
 });

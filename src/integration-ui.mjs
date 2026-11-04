@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {APPROVAL_CONSENT} from './integrations.mjs';
+import {APPROVAL_CONSENT,CODEX_CONSENT} from './integrations.mjs';
 const ERRORS=['plugin_location','linked_path','incomplete_plugin','runtime_missing','custom_config','legacy_present','busy','settings_changed','invalid_settings','consent_required','locked_off','managed','acl_failed','protected_path'];
 export function registerIntegrationUi({ui,manager,connectCodex,diagnostics=()=>({}),blocked=()=>null,uuid=randomUUID}){
  let token=null,context=null,busy=false,refreshTimer=null,appearances=0;
@@ -12,8 +12,8 @@ export function registerIntegrationUi({ui,manager,connectCodex,diagnostics=()=>(
   const p=ev.payload;if(!current(ev.action)||!p||typeof p!=='object'||Array.isArray(p))return;
   if(p.cmd==='status'&&Object.keys(p).length===1){await send();return;}
   // Approvals need the extra consent field that only the ticked inspector checkbox sends.
-  const consenting=p.cmd==='enableApprovals';
-  if(!allowed(ev.action)||busy||p.nonce!==token||Object.keys(p).length!==(consenting?3:2)||(consenting&&p.consent!==APPROVAL_CONSENT)||!['setupClaude','enableApprovals','disableApprovals','removeStatus','removeClaude','connectCodex'].includes(p.cmd))return;
+  const consenting=p.cmd==='enableApprovals'||p.cmd==='enableCodexApprovals',expected=p.cmd==='enableCodexApprovals'?CODEX_CONSENT:APPROVAL_CONSENT;
+  if(!allowed(ev.action)||busy||p.nonce!==token||Object.keys(p).length!==(consenting?3:2)||(consenting&&p.consent!==expected)||!['setupClaude','enableApprovals','disableApprovals','removeStatus','removeClaude','connectCodex','enableCodexApprovals','disableCodexApprovals'].includes(p.cmd))return;
   // Only damaged files stop everything; a folder that cannot be private still allows Codex and a retry.
   if(blocked()==='integrity_failed'){await send(blocked());return;}
   busy=true;const started=token;await send('working');let result='done';

@@ -8,7 +8,7 @@ import { DecisionLog } from './decision-log.mjs';
 import permissionAuth from '../hooks/permission-auth.cjs';
 import { restrictDirectory,restrictFile } from '../windows-acl.mjs';
 const {isHexKey,permissionProof,identityProof}=permissionAuth;
-export async function startReceiver(store,{directory,timeoutMs,getDiagnostics=()=>({}),acl={restrictDirectory,restrictFile},policy=()=>loadPolicy({directory}),log=new DecisionLog({directory})}={}){
+export async function startReceiver(store,{directory,timeoutMs,getDiagnostics=()=>({}),acl={restrictDirectory,restrictFile},holdable=()=>true,policy=()=>loadPolicy({directory}),log=new DecisionLog({directory})}={}){
   const token=randomBytes(32).toString('hex'),permissionKey=randomBytes(32).toString('hex'),broker=new PermissionBroker(store,{timeoutMs,log,authorize:request=>evaluateRequest(policy(),request.logTool,request.summary).approvable});
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');
@@ -39,7 +39,7 @@ export async function startReceiver(store,{directory,timeoutMs,getDiagnostics=()
           res.setHeader('X-Cardea-Proof',permissionProof(permissionKey,nonce,requestBody,200,body));
           res.end(body);
         };
-        const tool=typeof data.tool==='string'?data.tool.slice(0,201):'',verdict=evaluateRequest(policy(),tool,data.summary);
+        const tool=typeof data.tool==='string'?data.tool.slice(0,201):'',decided=evaluateRequest(policy(),tool,data.summary),verdict=decided.approvable&&!holdable(data.sessionId)?{approvable:false,reason:'no_key_shown'}:decided;
         // Not answerable by key: no decision at once, so Claude opens its normal dialog.
         if(!verdict.approvable){log.record({sessionId:data.sessionId,tool,decision:'deferred',reason:verdict.reason});send({});return;}
         broker.hold(data.sessionId,res,send,{tool,summary:data.summary});return;

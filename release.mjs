@@ -32,7 +32,14 @@ try{
  const pluginDownload=`Cardea-Deck-${version}.streamDeckPlugin`;fs.copyFileSync(path.join(release,'de.cardea.deck.streamDeckPlugin'),path.join(release,pluginDownload));
  fs.copyFileSync(path.join(root,'Remove-Claude-Hooks.ps1'),path.join(release,'Remove-Claude-Hooks.ps1'));
  // Runtime dependencies as installed from the lockfile; npm comes with Node.
- const sbomName=`Cardea-Deck-${version}.cdx.json`;fs.writeFileSync(path.join(release,sbomName),execFileSync(process.execPath,[path.join(path.dirname(process.execPath),'node_modules/npm/bin/npm-cli.js'),'sbom','--omit=dev','--sbom-format','cyclonedx','--sbom-type','application'],{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:8*1024*1024}));
+ const sbomName=`Cardea-Deck-${version}.cdx.json`;const sbom=JSON.parse(execFileSync(process.execPath,[path.join(path.dirname(process.execPath),'node_modules/npm/bin/npm-cli.js'),'sbom','--omit=dev','--sbom-format','cyclonedx','--sbom-type','application'],{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:8*1024*1024}));
+ // npm leaves out some packages that are bundled into the plugin. What ships must be listed, so the lockfile fills the gap.
+ for(const [rel,entry]of Object.entries(JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'))).packages)){
+  if(!rel||entry.dev)continue;
+  const name=rel.split('node_modules/').at(-1);
+  if(!sbom.components.some(component=>component.name===name))sbom.components.push({type:'library',name,version:entry.version,'bom-ref':`${name}@${entry.version}`,purl:`pkg:npm/${name.replace('@','%40')}@${entry.version}`,...(entry.license?{licenses:[{license:{id:entry.license}}]}:{})});
+ }
+ fs.writeFileSync(path.join(release,sbomName),JSON.stringify(sbom,null,2)+'\n');
  const artifacts=[path.basename(archive),pluginDownload,'Remove-Claude-Hooks.ps1',sbomName];fs.writeFileSync(path.join(release,'SHA256SUMS.txt'),artifacts.map(name=>createHash('sha256').update(fs.readFileSync(path.join(release,name))).digest('hex')+'  '+name).join('\n')+'\n');
  console.log(JSON.stringify(verifyRelease(release)));
  console.log('Release assets prepared in release/. No local configuration exported.');

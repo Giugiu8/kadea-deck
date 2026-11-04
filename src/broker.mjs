@@ -31,7 +31,7 @@ export class PermissionBroker {
     this.log?.record({sessionId:p.sessionId,tool:p.logTool,decision:decision??outcome});
     const current=this.store.get(p.sessionId);
     const valid=current&&current.turn===p.turn&&current.requestId===id&&current.state!=='ended';
-    const answer=valid&&decision?{hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:decision,...(decision==='deny'?{message:'In Cardea Deck abgelehnt.'}:{})}}}:{};
+    const answer=valid&&decision?{hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:decision,...(decision==='deny'?{message:'Declined on Stream Deck.'}:{})}}}:{};
     if(valid)this.store.finishPermission(p.sessionId,id,decision);
     if(!p.response.destroyed&&!p.response.writableEnded)p.send(answer);
   }

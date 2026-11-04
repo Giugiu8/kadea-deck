@@ -43,14 +43,17 @@ function Wanted-Hook($Hook){
 }
 function Digest([byte[]]$Data){$algorithm=[Security.Cryptography.SHA256]::Create();try{return [Convert]::ToBase64String($algorithm.ComputeHash($Data))}finally{$algorithm.Dispose()}}
 $settings=Assert-LocalPath (Join-Path $taskHome '.claude/settings.json')
-if(-not(Test-Path -LiteralPath $settings)){Write-Output 'No Claude settings file; nothing changed.';exit 0}
-if((Get-Item -LiteralPath $settings).Length -gt 2000000){throw 'Settings file is too large for automatic removal'}
 $runtime=Assert-LocalPath (Join-Path $taskHome '.cardeadeck');$runtimeExisted=Test-Path -LiteralPath $runtime;[IO.Directory]::CreateDirectory($runtime) | Out-Null
 # The backup holds the user's settings: a folder created here is private to this account.
 if(-not $runtimeExisted){$identity=[Security.Principal.WindowsIdentity]::GetCurrent().User;$acl=New-Object Security.AccessControl.DirectorySecurity;$acl.SetAccessRuleProtection($true,$false);$acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($identity,'FullControl','ContainerInherit,ObjectInherit','None','Allow')));[IO.Directory]::SetAccessControl($runtime,$acl)}
 # Hooks gone means the recorded consent is gone too, even if the plugin is reinstalled later.
 if($Group -ne 'Status'){$configFile=Assert-LocalPath (Join-Path $runtime 'config.json');if(Test-Path -LiteralPath $configFile){try{$config=[IO.File]::ReadAllText($configFile) | ConvertFrom-Json;$config | Add-Member -NotePropertyName approvalsEnabled -NotePropertyValue $false -Force;[IO.File]::WriteAllText($configFile,($config | ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))}catch{Remove-Item -LiteralPath $configFile}}}
-$lock=Assert-LocalPath (Join-Path $runtime 'integrations.lock');$handle=[IO.File]::Open($lock,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+if(-not(Test-Path -LiteralPath $settings)){Write-Output 'No Claude settings file; nothing else to change.';exit 0}
+if((Get-Item -LiteralPath $settings).Length -gt 2000000){throw 'Settings file is too large for automatic removal'}
+$lock=Assert-LocalPath (Join-Path $runtime 'integrations.lock')
+# A lock left behind by a process that no longer exists must not block recovery; the plugin handles it the same way.
+if(Test-Path -LiteralPath $lock){$holder=$null;try{$holder=([IO.File]::ReadAllText($lock) | ConvertFrom-Json).pid}catch{};if($holder -is [int] -and -not (Get-Process -Id $holder -ErrorAction SilentlyContinue)){Remove-Item -LiteralPath $lock}}
+$handle=[IO.File]::Open($lock,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
 $temporary=$null
 try{
  $lockBytes=[Text.Encoding]::UTF8.GetBytes((@{pid=$PID;at=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()} | ConvertTo-Json -Compress));$handle.Write($lockBytes,0,$lockBytes.Length)

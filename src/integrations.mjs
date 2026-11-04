@@ -4,7 +4,8 @@ import {loadPolicy,machinePolicyFile,writeConfig} from './approval-policy.mjs';
 import {restrictDirectory} from '../windows-acl.mjs';
 import {managedRoot,readManagedState} from '../managed-state.mjs';
 export const APPROVAL_CONSENT='approve-by-key';
-const COMMANDS=['setupClaude','enableApprovals','disableApprovals','removeStatus','removeClaude'];
+export const CODEX_CONSENT='approve-codex-by-key';
+const COMMANDS=['setupClaude','enableApprovals','disableApprovals','removeStatus','removeClaude','enableCodexApprovals','disableCodexApprovals'];
 export {managedRoot,readManagedState};
 const fail=code=>{throw Error(code);};
 const bytes=file=>{try{return fs.readFileSync(file);}catch(error){if(error.code==='ENOENT')return null;throw error;}};
@@ -35,23 +36,27 @@ export function createIntegrations({home,appData,plugin,node=process.execPath,be
  }
  function status(){
   try{
-   validate();const input=parse(bytes(settings())),policy=loadPolicy({directory:runtime(),machineFile}),managed=readManagedState(managedDirectory);
-   if(legacy(input))return{claude:'legacy_present',approvals:'off',customStatusLine:false,allowlist:policy.allowlist};
+   validate();const input=parse(bytes(settings())),policy=loadPolicy({directory:runtime(),machineFile}),managed=readManagedState(managedDirectory),codexApprovals=policy.lockedOff?'locked_off':policy.codexEnabled?'on':'off';
+   if(legacy(input))return{claude:'legacy_present',approvals:'off',codexApprovals,customStatusLine:false,allowlist:policy.allowlist};
    const custom=!!input.statusLine&&!hookOwner(input.statusLine.command);
    // Managed: the organization owns the hook entries, the user only the key-approval opt-in.
-   if(managed.active)return{claude:managed.status?'managed':'managed_missing',approvals:!managed.approval?'not_deployed':policy.lockedOff?'locked_off':policy.enabled?'on':'hook_inactive',customStatusLine:custom,allowlist:policy.allowlist,managed:true};
+   if(managed.active)return{claude:managed.status?'managed':'managed_missing',approvals:!managed.approval?'not_deployed':policy.lockedOff?'locked_off':policy.enabled?'on':'hook_inactive',customStatusLine:custom,allowlist:policy.allowlist,codexApprovals,managed:true};
    const groups=installedGroups(input,{node,plugin});
    const approvals=policy.lockedOff?'locked_off':groups.approvalPresent?(!policy.enabled?'hook_inactive':groups.approval?'on':'repair_needed'):'off';
-   return{claude:groups.status?'installed':groups.statusPresent?'repair_needed':'not_set_up',approvals,customStatusLine:custom,allowlist:policy.allowlist};
+   return{claude:groups.status?'installed':groups.statusPresent?'repair_needed':'not_set_up',approvals,codexApprovals,customStatusLine:custom,allowlist:policy.allowlist};
   }catch(error){return{claude:['plugin_location','linked_path','incomplete_plugin','runtime_missing','custom_config'].includes(error.message)?error.message:'invalid_settings',approvals:'off',customStatusLine:false};}
  }
  function update(command,{consent}={}){
   if(!COMMANDS.includes(command))fail('invalid_command');validate();
   if(command==='enableApprovals'&&consent!==APPROVAL_CONSENT)fail('consent_required');
+  if(command==='enableCodexApprovals'&&consent!==CODEX_CONSENT)fail('consent_required');
   const target=settings(),root=runtime();fs.mkdirSync(root,{recursive:true,mode:0o700});
   try{restrict(root);}catch{fail('acl_failed');}
   const policy=loadPolicy({directory:root,machineFile}),managed=readManagedState(managedDirectory);
-  if(command==='enableApprovals'&&policy.lockedOff)fail('locked_off');
+  if(['enableApprovals','enableCodexApprovals'].includes(command)&&policy.lockedOff)fail('locked_off');
+  // Codex consent is a choice of its own: it touches no Claude settings.
+  if(command==='enableCodexApprovals'){writeConfig(root,{codexApprovalsEnabled:true,codexConsentAt:new Date().toISOString()});return status();}
+  if(command==='disableCodexApprovals'){writeConfig(root,{codexApprovalsEnabled:false});return status();}
   if(managed.active){
    // Never write hooks into the user's file here: they would not run, or would bypass IT.
    if(command==='enableApprovals'&&managed.approval)writeConfig(root,{approvalsEnabled:true,approvalsConsentAt:new Date().toISOString()});

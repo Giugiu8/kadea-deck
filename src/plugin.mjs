@@ -7,12 +7,15 @@ import {startReceiver} from './receiver.mjs';
 import {cardSvg} from './cards.mjs';
 import {refreshDesktopMetadata,openUrl,USAGE,NEW_CHAT} from './desktop.mjs';
 import {unexpectedPluginFiles,verifyPluginFiles} from './integrity.mjs';
+import {loadPolicy} from './approval-policy.mjs';
+import summaries from '../hooks/tool-summary.cjs';
 import runtime from '../hooks/runtime.cjs';
 import {CodexStore} from './codex-store.mjs';
 import {createIntegrations} from './integrations.mjs';
 import {registerIntegrationUi} from './integration-ui.mjs';
 import {discoverCodex} from './windows-apps.mjs';
-const directory=runtime.runtimeDirectory();
+// The plugin always uses its folder in the profile; the override exists for hook test fixtures only.
+const directory=runtime.runtimeDirectory({USERPROFILE:process.env.USERPROFILE});
 const HOLD_MS=1000;
 // A press that began on the previous image must not reach a new request.
 const ARM_MS=600;
@@ -25,11 +28,13 @@ if(integrityResult){serviceProblem='integrity_failed';streamDeck.logger.error(`C
 else{const extra=unexpectedPluginFiles(pluginDirectory);if(extra.length)streamDeck.logger.warn(`Cardea Deck: files not part of this release: ${extra.slice(0,5).join(', ')}`);}
 // Migrate state only from the native plugin's own view. Never reuse an old
 // connection/token, or overwrite a shared file created by a newer receiver.
-fs.mkdirSync(directory,{recursive:true,mode:0o700});
-for(const name of ['state.json','statusline.json']){
-  const old=path.join(process.env.LOCALAPPDATA,'CardeaDeck',name),next=path.join(directory,name);
-  if(!fs.existsSync(next))try{fs.copyFileSync(old,next,fs.constants.COPYFILE_EXCL);}catch{}
-}
+try{
+  fs.mkdirSync(directory,{recursive:true,mode:0o700});
+  for(const name of ['state.json','statusline.json']){
+    const old=path.join(process.env.LOCALAPPDATA,'CardeaDeck',name),next=path.join(directory,name);
+    if(!fs.existsSync(next))try{fs.copyFileSync(old,next,fs.constants.COPYFILE_EXCL);}catch{}
+  }
+}catch{serviceProblem??='acl_failed';streamDeck.logger.error('Cardea Deck: the runtime folder is not usable. Hooks are not served.');}
 const store=new DeckStore({file:path.join(directory,'state.json')});
 const contexts=new Map(),down=new Map(),images=new Map(),bindings=new Map(),pendingImages=new Map();let imageSequence=0;
 const inputDiagnostics={keyDownCount:0,keyUpCount:0,lastAction:null,lastResult:null};
@@ -37,9 +42,10 @@ let codex=null,codexExecutable='',connectingCodex=false;
 const integrations=createIntegrations({home:process.env.USERPROFILE,appData:process.env.APPDATA,plugin:pluginDirectory});
 let receiver=null;
 const publicationFile=path.join(directory,'connection.json');
-if(!serviceProblem)try{receiver=await startReceiver(store,{directory,getDiagnostics:()=>({visibleKeys:contexts.size,renderedKeys:images.size,...inputDiagnostics,codex:{configured:!!codex,connected:codex?.connected===true,known:codex?.list().length??0,live:codex?.list().filter(t=>t.state!=='unknown').length??0}})});}catch{serviceProblem='acl_failed';streamDeck.logger.error('Cardea Deck: could not make the runtime folder private. Hooks are not served.');}
+if(!serviceProblem)try{receiver=await startReceiver(store,{directory,holdable:id=>store.selected===id&&[...contexts.values()].some(context=>context.kind==='permission'),getDiagnostics:()=>({visibleKeys:contexts.size,renderedKeys:images.size,...inputDiagnostics,codex:{configured:!!codex,connected:codex?.connected===true,known:codex?.list().length??0,live:codex?.list().filter(t=>t.state!=='unknown').length??0}})});}catch{serviceProblem='acl_failed';streamDeck.logger.error('Cardea Deck: could not make the runtime folder private. Hooks are not served.');}
 // Hooks find no receiver and return no decision, so Claude keeps using its own dialogs.
 if(serviceProblem)try{fs.rmSync(publicationFile,{force:true});}catch{}
+const codexApprovalsOn=()=>{try{return loadPolicy({directory}).codexEnabled===true;}catch{return false;}};
 let approvalsOn=false;
 const refreshPolicy=()=>{try{approvalsOn=receiver?.policy().enabled===true;receiver?.broker.revalidate();}catch{approvalsOn=false;}};refreshPolicy();
 setInterval(refreshPolicy,5000).unref();
@@ -57,7 +63,7 @@ function view(kind,settings){
   if(kind.startsWith('codex-')){
     const target=codex?.get(),task=kind==='codex-session'?codex?.list()[Math.max(0,Number(settings.slot)||0)]:target;
     if(kind==='codex-session')return task?{kind:'session',agent:'codex',title:lines(task.title),hint:task.state==='unknown'?'Unverified signal':task.project,state:task.state,selected:task.selected}:{kind:'action',title:'New chat',icon:'chatplus',caption:codex?'Empty slot':'Set up Codex'};
-    if(kind==='codex-permission'){const decision=settings.decision==='deny'?'decline':'accept',ready=!!target?.approval?.decisions.includes(decision);return{kind:'action',title:decision==='accept'?'Approve':'Decline',icon:decision==='accept'?'check':'close',disabled:!ready,caption:ready?(decision==='accept'?`HOLD 1 S · ${target.approval.type}`:`${target.approval.type} · ${target.project}`):target?.state==='attention'?'Check in chat':'No request'};}
+    if(kind==='codex-permission'){const decision=settings.decision==='deny'?'decline':'accept',available=!!target?.approval?.decisions.includes(decision),off=decision==='accept'&&!codexApprovalsOn(),ready=available&&!off,marker=(codex?.snapshot(target)?.requestKey??'').slice(0,4).toUpperCase();return{kind:'action',title:decision==='accept'?'Approve':'Decline',icon:decision==='accept'?'check':'close',disabled:!ready,caption:available&&off?'Key approvals off':ready?(decision==='accept'?`${marker} HOLD ${target.approval.type}`:`${target.approval.type} · ${target.project}`):target?.state==='attention'?'Check in chat':'No request'};}
     return{kind:'action',title:'Stop',icon:'stop',caption:'CODEX · HOLD 1 S',disabled:!target?.stopAllowed};
   }
   const list=store.list(),s=store.get();
@@ -66,7 +72,7 @@ function view(kind,settings){
   if(kind==='summary')return {kind:'summary',agent:'claude',kicker:'CLAUDE',title:store.connected?String(list.length):'—',subtitle:store.connected?'captured chats':'waiting for source',footer:store.connected?`${list.filter(s=>s.state==='attention').length} need input`:'UNKNOWN STATUS',state:list.some(s=>s.state==='attention')?'attention':store.connected?'idle':'unknown'};
   if(kind==='target')return selectedCard(s,'CLAUDE · TARGET');
   if(kind==='quota'){const q=store.quotaView(settings.window==='five_hour'?'five_hour':'seven_day');if(q&&!q.stale)return{kind:'quota',kicker:settings.window==='five_hour'?'CLAUDE · 5 HOURS':'CLAUDE · WEEK',value:`${Math.round(100-q.used)}%`,subtitle:'remaining · reported by source',progress:(100-q.used)/100,state:'unread'};return{kind:'action',kicker:'CLAUDE',title:'Usage',subtitle:q?'Stale value · open':'Open actual limits',icon:'gauge',state:'unknown'};}
-  if(kind==='permission'){const deny=settings.decision==='deny',request=s?.requestId?receiver?.broker.request(s.requestId):null;if(request?.summary)return{kind:'approval',decision:deny?'deny':'allow',tool:request.tool,summary:request.summary,marker:s.requestId.slice(0,4).toUpperCase(),project:s.project,title:deny?'Decline':'Hold: Approve'};return{kind:'action',kicker:'CLAUDE',title:deny?'Decline':'Approve',caption:!approvalsOn?'Key approvals off':s?.state==='attention'?'Check in chat':'No request',subtitle:'No selected request',icon:deny?'close':'check',state:'unknown',disabled:true};}
+  if(kind==='permission'){const deny=settings.decision==='deny',request=s?.requestId?receiver?.broker.request(s.requestId):null;if(request?.summary)return{kind:'approval',decision:deny?'deny':'allow',tool:request.tool,summary:request.summary,marker:s.requestId.slice(0,4).toUpperCase(),project:summaries.plain(s.project)?s.project:'',title:deny?'Decline':'Hold: Approve'};return{kind:'action',kicker:'CLAUDE',title:deny?'Decline':'Approve',caption:!approvalsOn?'Key approvals off':s?.state==='attention'?'Check in chat':'No request',subtitle:'No selected request',icon:deny?'close':'check',state:'unknown',disabled:true};}
   return{kind:'action',kicker:'CLAUDE',title:kind==='ack'?'Read':'Open',subtitle:kind==='ack'?'This result only':'Selected chat',icon:kind==='ack'?'read':'open',state:kind==='ack'&&s?.unread?'unread':'idle',disabled:kind==='ack'&&!s?.unread};
 }
 function inputBinding(kind,settings){const cd=kind.startsWith('codex-');const s=cd?(kind==='codex-session'?codex?.list()[Math.max(0,Number(settings.slot)||0)]:codex?.get()):kind==='session'?store.list()[(['claude','chats'].includes(settings.page)?chatOffset:0)+Math.max(0,Number(settings.slot)||0)]:store.get();return{session:s?{...s}:null,settings:{...settings},codexSnapshot:cd?codex?.snapshot(s):null};}
@@ -98,7 +104,7 @@ class CardeaAction extends SingletonAction {
         if(s)ok=!!codex?.select(s.id)&&await openUrl(`codex://threads/${s.id}`);
         else ok=await openUrl('codex://threads/new');
       }
-      else if(this.kind==='codex-permission')ok=!!codex&&(settings.decision==='deny'||held)&&await codex.act(captured.codexSnapshot,settings.decision==='deny'?'decline':'accept');
+      else if(this.kind==='codex-permission')ok=!!codex&&(settings.decision==='deny'||(held&&codexApprovalsOn()))&&await codex.act(captured.codexSnapshot,settings.decision==='deny'?'decline':'accept');
       else if(this.kind==='codex-stop')ok=held&&!!codex&&await codex.act(captured.codexSnapshot,'stop');
       else if(this.kind==='session')ok=s?await navigate(s):await openUrl(NEW_CHAT);
       else if(this.kind==='open')ok=await navigate(s);

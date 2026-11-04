@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import rules from '../hooks/approval-rules.cjs';
 export const {DEFAULT_ALLOWLIST,eligibleTool,machinePolicyFile}=rules;
-const {readMachinePolicy,machineBlocks}=rules;
+const {machinePolicyFiles,readMachinePolicies,machineBlocks}=rules;
 const CONFIG='config.json';
-function readJson(file){try{const stat=fs.statSync(file);if(stat.size>64*1024)return null;const value=JSON.parse(fs.readFileSync(file,'utf8').replace(/^﻿/,''));return value&&typeof value==='object'&&!Array.isArray(value)?value:null;}catch{return null;}}
+function readJson(file){try{const stat=fs.statSync(file);if(stat.size>64*1024)return null;const value=JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));return value&&typeof value==='object'&&!Array.isArray(value)?value:null;}catch{return null;}}
 export function readConfig(directory){return(directory&&readJson(path.join(directory,CONFIG)))||{};}
 export function writeConfig(directory,patch){
  const file=path.join(directory,CONFIG),temp=`${file}.${process.pid}.tmp`,next={...readConfig(directory),...patch,schema:1};
@@ -15,12 +15,13 @@ export function writeConfig(directory,patch){
  return next;
 }
 // A machine policy can only narrow the user's choice. If it is present but damaged, approvals are off.
-export function loadPolicy({directory,machineFile=machinePolicyFile()}={}){
- const user=readConfig(directory),machine=readMachinePolicy(machineFile);
+export function loadPolicy({directory,machineFile}={}){
+ const user=readConfig(directory),machine=readMachinePolicies(machineFile?[machineFile]:machinePolicyFiles());
  const requested=Array.isArray(user.allowlist)?user.allowlist:[...DEFAULT_ALLOWLIST];
  const allowlist=requested.filter(name=>eligibleTool(name)&&!machineBlocks(machine,name));
  const lockedOff=!machine.valid||machine.approvalsAllowed===false;
- return{enabled:user.approvalsEnabled===true&&!lockedOff,lockedOff,allowlist};
+ // Codex requests show only their type, so they have a consent of their own.
+ return{enabled:user.approvalsEnabled===true&&!lockedOff,codexEnabled:user.codexApprovalsEnabled===true&&!lockedOff,lockedOff,allowlist};
 }
 export function evaluateRequest(policy,tool,summary){
  if(!policy?.enabled)return{approvable:false,reason:'approvals_off'};

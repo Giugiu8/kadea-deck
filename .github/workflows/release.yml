@@ -71,10 +71,16 @@ jobs:
           name: release-files
           path: release-files
       - name: Compare the release files with this rebuild
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
-          node reproduce.mjs release-files/Cardea-Deck-*.streamDeckPlugin
-          node reproduce.mjs release-files/Cardea-Deck-*-advanced-portable.zip
+          printf '%s\n' "Cardea-Deck-$VERSION-advanced-portable.zip" "Cardea-Deck-$VERSION.cdx.json" "Cardea-Deck-$VERSION.streamDeckPlugin" Remove-Claude-Hooks.ps1 SHA256SUMS.txt | LC_ALL=C sort > expected-files.txt
+          ls -A release-files | LC_ALL=C sort | diff expected-files.txt -
+          (cd release-files && sha256sum -c SHA256SUMS.txt)
+          node reproduce.mjs "release-files/Cardea-Deck-$VERSION.streamDeckPlugin"
+          node reproduce.mjs "release-files/Cardea-Deck-$VERSION-advanced-portable.zip"
           node reproduce.mjs release-files/Remove-Claude-Hooks.ps1
+          node reproduce.mjs "release-files/Cardea-Deck-$VERSION.cdx.json"
 
   # Signing rights never meet code from the repository or a package manager: this job only attests files.
   attest:
