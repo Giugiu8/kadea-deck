@@ -90,6 +90,8 @@ Double-click the next `.streamDeckPlugin` to update. Keep your customized profil
 
 Before uninstalling, select a Cardea chat key and click **Remove Claude hooks**, then uninstall the plugin in Stream Deck. If you already removed it, the release's standalone **Remove-Claude-Hooks.ps1** removes only exact Cardea Node hook commands, without requiring Node.js or restoring an old whole settings file. Other settings, local state and backups are retained. For an old managed ZIP installation, `Uninstall.cmd` remains available in its download.
 
+Corporate or PowerShell execution policy may block the downloaded recovery script. Verify it against `SHA256SUMS.txt` with `Get-FileHash .\Remove-Claude-Hooks.ps1 -Algorithm SHA256`; the helper never changes execution policy. If blocked, back up `%USERPROFILE%\.claude\settings.json`, then remove only Cardea's hook entries and its status-line command if present, manually or using IT-approved settings management. Preserve unrelated entries. Claude's [`/hooks` menu](https://code.claude.com/docs/en/hooks#the-hooks-menu) only displays commands and their source locations. Native removal before uninstalling avoids this recovery step.
+
 ## Build and contribute
 
 Windows, Node 22+, ImageMagick `magick`, the Windows .NET C# compiler and Git are needed **only for source builds**:

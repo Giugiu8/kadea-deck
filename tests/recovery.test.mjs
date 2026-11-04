@@ -7,8 +7,8 @@ test('standalone recovery needs no Node installation and preserves unrelated Cla
  try{
   const output=execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File',path.resolve('Remove-Claude-Hooks.ps1')],{env:{...process.env,USERPROFILE:dir},windowsHide:true,encoding:'utf8'});
   assert.deepEqual(JSON.parse(fs.readFileSync(file)),foreign);assert.match(output,/Removed only Cardea/);assert.ok(fs.existsSync(path.join(dir,'.cardeadeck/backups')));
-  execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File',path.resolve('Remove-Claude-Hooks.ps1')],{env:{...process.env,USERPROFILE:dir},windowsHide:true});assert.deepEqual(JSON.parse(fs.readFileSync(file)),foreign);
+  execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File',path.resolve('Remove-Claude-Hooks.ps1')],{env:{...process.env,USERPROFILE:dir},windowsHide:true});assert.deepEqual(JSON.parse(fs.readFileSync(file)),foreign);assert.equal(fs.existsSync(path.join(dir,'.cardeadeck/integrations.lock')),false);
   const invalid=Buffer.concat([Buffer.from('{"env":{"VALUE":"'),Buffer.from([0xff]),Buffer.from('"}}')]);fs.writeFileSync(file,invalid);
-  assert.throws(()=>execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File',path.resolve('Remove-Claude-Hooks.ps1')],{env:{...process.env,USERPROFILE:dir},windowsHide:true,stdio:'pipe'}));assert.deepEqual(fs.readFileSync(file),invalid);
+  assert.throws(()=>execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File',path.resolve('Remove-Claude-Hooks.ps1')],{env:{...process.env,USERPROFILE:dir},windowsHide:true,stdio:'pipe'}),error=>error.status===1&&error.stderr.toString().includes('GetString'));assert.deepEqual(fs.readFileSync(file),invalid);assert.equal(fs.existsSync(path.join(dir,'.cardeadeck/integrations.lock')),false);
  }finally{assert.equal(path.dirname(dir),os.tmpdir());assert.ok(path.basename(dir).startsWith('cardea-recovery-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
