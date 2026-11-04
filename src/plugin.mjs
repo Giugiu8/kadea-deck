@@ -14,8 +14,7 @@ import {CodexStore} from './codex-store.mjs';
 import {createIntegrations} from './integrations.mjs';
 import {registerIntegrationUi} from './integration-ui.mjs';
 import {discoverCodex} from './windows-apps.mjs';
-// The plugin always uses its folder in the profile; the override exists for hook test fixtures only.
-const directory=runtime.runtimeDirectory({USERPROFILE:process.env.USERPROFILE});
+const directory=runtime.runtimeDirectory();
 const HOLD_MS=1000;
 // A press that began on the previous image must not reach a new request.
 const ARM_MS=600;
@@ -24,11 +23,15 @@ const pluginDirectory=path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 // Set once the files or their permissions cannot be trusted: no hook service, a warning on every key.
 let serviceProblem=null;
 const integrityResult=verifyPluginFiles(pluginDirectory);
-if(integrityResult){serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files failed the integrity check (${integrityResult.reason}${integrityResult.file?': '+integrityResult.file:''}). Hooks are not served; reinstall the plugin.`);}
-else{const extra=unexpectedPluginFiles(pluginDirectory);if(extra.length)streamDeck.logger.warn(`Cardea Deck: files not part of this release: ${extra.slice(0,5).join(', ')}`);}
+// A file briefly out of reach, for example held by a scanner, is checked again later; it is not damage.
+if(integrityResult&&integrityResult.reason!=='file_unreadable'){serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files failed the integrity check (${integrityResult.reason}${integrityResult.file?': '+integrityResult.file:''}). Hooks are not served; reinstall the plugin.`);}
+else if(!integrityResult){const extra=unexpectedPluginFiles(pluginDirectory);if(extra.length)streamDeck.logger.warn(`Cardea Deck: files not part of this release: ${extra.slice(0,5).join(', ')}`);}
 // Migrate state only from the native plugin's own view. Never reuse an old
 // connection/token, or overwrite a shared file created by a newer receiver.
-try{
+// A link here could lead anywhere: nothing is written or removed through it.
+const runtimeLinked=()=>{try{return fs.lstatSync(directory).isSymbolicLink();}catch{return false;}};
+if(runtimeLinked())serviceProblem??='acl_failed';
+else try{
   fs.mkdirSync(directory,{recursive:true,mode:0o700});
   for(const name of ['state.json','statusline.json']){
     const old=path.join(process.env.LOCALAPPDATA,'CardeaDeck',name),next=path.join(directory,name);
@@ -42,13 +45,17 @@ let codex=null,codexExecutable='',connectingCodex=false;
 const integrations=createIntegrations({home:process.env.USERPROFILE,appData:process.env.APPDATA,plugin:pluginDirectory});
 let receiver=null;
 const publicationFile=path.join(directory,'connection.json');
-if(!serviceProblem)try{receiver=await startReceiver(store,{directory,holdable:id=>store.selected===id&&[...contexts.values()].some(context=>context.kind==='permission'),getDiagnostics:()=>({visibleKeys:contexts.size,renderedKeys:images.size,...inputDiagnostics,codex:{configured:!!codex,connected:codex?.connected===true,known:codex?.list().length??0,live:codex?.list().filter(t=>t.state!=='unknown').length??0}})});}catch{serviceProblem='acl_failed';streamDeck.logger.error('Cardea Deck: could not make the runtime folder private. Hooks are not served.');}
+let serviceLogged=false;
+async function startService(){try{receiver=await startReceiver(store,{directory,holdable:id=>store.selected===id&&[...contexts.values()].some(context=>context.kind==='permission'&&context.settings.decision!=='deny'),getDiagnostics:()=>({visibleKeys:contexts.size,renderedKeys:images.size,...inputDiagnostics,codex:{configured:!!codex,connected:codex?.connected===true,known:codex?.list().length??0,live:codex?.list().filter(t=>t.state!=='unknown').length??0}})});serviceProblem=null;}catch{serviceProblem='acl_failed';if(!serviceLogged){serviceLogged=true;streamDeck.logger.error('Cardea Deck: could not make the runtime folder private. Hooks are not served; retrying.');}}}
+if(!serviceProblem)await startService();
 // Hooks find no receiver and return no decision, so Claude keeps using its own dialogs.
-if(serviceProblem)try{fs.rmSync(publicationFile,{force:true});}catch{}
+if(serviceProblem&&!runtimeLinked())try{fs.rmSync(publicationFile,{force:true});}catch{}
 const codexApprovalsOn=()=>{try{return loadPolicy({directory}).codexEnabled===true;}catch{return false;}};
 let approvalsOn=false;
 const refreshPolicy=()=>{try{approvalsOn=receiver?.policy().enabled===true;receiver?.broker.revalidate();}catch{approvalsOn=false;}};refreshPolicy();
 setInterval(refreshPolicy,5000).unref();
+// A slow or busy PC at logon must not leave hooks off until the next restart.
+setInterval(async()=>{if(serviceProblem!=='acl_failed'||runtimeLinked())return;await startService();if(!serviceProblem){refreshPolicy();paint();}},60_000).unref();
 const metadataRoots=()=>{const base=path.join(process.env.LOCALAPPDATA,'Claude-Data');try{return fs.readdirSync(base,{withFileTypes:true}).filter(e=>e.isDirectory()&&e.name.startsWith('claude')).map(e=>path.join(base,e.name,'claude-code-sessions'));}catch{return[];}};
 let chatOffset=0;
 const label={working:'WORKING',attention:'INPUT',unread:'NEW',error:'ERROR',unknown:'UNKNOWN',idle:'READY',ended:'READY'};
@@ -104,7 +111,7 @@ class CardeaAction extends SingletonAction {
         if(s)ok=!!codex?.select(s.id)&&await openUrl(`codex://threads/${s.id}`);
         else ok=await openUrl('codex://threads/new');
       }
-      else if(this.kind==='codex-permission')ok=!!codex&&(settings.decision==='deny'||(held&&codexApprovalsOn()))&&await codex.act(captured.codexSnapshot,settings.decision==='deny'?'decline':'accept');
+      else if(this.kind==='codex-permission')ok=!!codex&&(settings.decision==='deny'||(held&&codexApprovalsOn()))&&await codex.act(captured.codexSnapshot,settings.decision==='deny'?'decline':'accept',settings.decision==='deny'?{}:{allowed:codexApprovalsOn});
       else if(this.kind==='codex-stop')ok=held&&!!codex&&await codex.act(captured.codexSnapshot,'stop');
       else if(this.kind==='session')ok=s?await navigate(s):await openUrl(NEW_CHAT);
       else if(this.kind==='open')ok=await navigate(s);
@@ -136,7 +143,11 @@ const integrationUi=registerIntegrationUi({ui:streamDeck.ui,manager:integrations
 store.on('change',()=>integrationUi.refresh());
 if(serviceProblem!=='integrity_failed'&&integrations.codexEnabled())void connectCodex(()=>true,false).catch(()=>{});
 // Hook files are read anew on every event, so recheck them while running too.
-setInterval(()=>{if(serviceProblem==='integrity_failed')return;const result=verifyPluginFiles(pluginDirectory);if(!result)return;serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files changed while running (${result.reason}). Hooks are no longer served.`);void receiver?.close().catch(()=>{});receiver=null;refreshPolicy();codex?.close();codex=null;paint();},5*60_000).unref();
+let integrityStrikes=0;
+setInterval(()=>{if(serviceProblem==='integrity_failed')return;const result=verifyPluginFiles(pluginDirectory);if(!result){integrityStrikes=0;return;}
+  // A changed file counts at once. A file out of reach, as on a redirected folder after wake, must stay so for 15 minutes.
+  if(result.reason==='file_unreadable'||result.reason==='file_missing'){if(++integrityStrikes<3)return;}
+  serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files changed while running (${result.reason}). Hooks are no longer served.`);void receiver?.close().catch(()=>{});receiver=null;refreshPolicy();codex?.close();codex=null;paint();},5*60_000).unref();
 setInterval(()=>{if(serviceProblem!=='integrity_failed'&&codexExecutable&&!fs.existsSync(codexExecutable))void connectCodex(()=>true,false).catch(()=>{});},60_000).unref();
 store.on('change',paint);setInterval(paint,1000).unref();
 let scanning=false,lastScan=0;async function refresh(){if(scanning||Date.now()-lastScan<5000)return;scanning=true;lastScan=Date.now();try{for(const root of metadataRoots())await refreshDesktopMetadata(store,root);}finally{scanning=false;}}

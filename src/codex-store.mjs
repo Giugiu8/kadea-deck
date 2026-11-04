@@ -81,7 +81,10 @@ export class CodexStore extends EventEmitter {
   if(!next?.threadRuntimeStatus){task.live=false;task.subscribed=false;this.emit('change');return;}
   task.raw=next;task.revision=change.revision;task.live=true;task.seenAt=this.now();task.streamVersion=message.version;task.title=typeof next.title==='string'&&next.title?next.title.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,512):task.title;if(change.type==='snapshot'){task.snapshotSequence=(task.snapshotSequence??0)+1;this.emit('snapshot',task.id);}this.emit('change');
  }
- view(task){if(!task)return null;const fresh=this.connected&&task.live&&task.verifiedAt!=null&&this.now()-task.verifiedAt<35_000;let state=fresh?codexState(task.raw):'unknown';if(state==='working'&&this.now()-task.seenAt>900000)state='unknown';const approval=fresh?approvalFor(task.raw):null;return{...task,raw:undefined,state,stopAllowed:fresh&&state==='working'&&!!turnWitness(task.raw),approval:approval&&this.persistenceOk&&!this.attempts.has(requestKey(task,approval))&&!task.sending?approval:null,selected:task.id===this.selected};}
+ view(task){if(!task)return null;
+  // A failed write may be temporary; a damaged journal, which never sets this, stays locked. Nothing is sent without a successful write.
+  if(this.writeFailedAt!=null&&this.now()-this.writeFailedAt>=30_000){this.writeFailedAt=null;this.persistenceOk=true;}
+  const fresh=this.connected&&task.live&&task.verifiedAt!=null&&this.now()-task.verifiedAt<35_000;let state=fresh?codexState(task.raw):'unknown';if(state==='working'&&this.now()-task.seenAt>900000)state='unknown';const approval=fresh?approvalFor(task.raw):null;return{...task,raw:undefined,state,stopAllowed:fresh&&state==='working'&&!!turnWitness(task.raw),approval:approval&&this.persistenceOk&&!this.attempts.has(requestKey(task,approval))&&!task.sending?approval:null,selected:task.id===this.selected};}
  list(){return[...this.tasks.values()].map(t=>this.view(t)).sort((a,b)=>priorities[a.state]-priorities[b.state]||a.order-b.order);}
  get(){return this.view(this.tasks.get(this.selected));}
  select(id){if(!this.tasks.has(id))return false;this.selected=id;this.selectionEpoch++;this.emit('change');return true;}
@@ -92,7 +95,7 @@ export class CodexStore extends EventEmitter {
   try{if(this.recordAttempts){if(this.recordAttempts([...this.attempts])!==true)throw Error('ledger-write');}
    else{fs.mkdirSync(path.dirname(this.ledgerFile),{recursive:true});const temp=this.ledgerFile+'.'+randomUUID()+'.tmp';try{fs.writeFileSync(temp,JSON.stringify({schema:1,attempts:[...this.attempts]}),{mode:0o600,flag:'wx'});fs.renameSync(temp,this.ledgerFile);}finally{try{fs.unlinkSync(temp);}catch{}}}
    return true;
-  }catch{this.persistenceOk=false;return false;}
+  }catch{this.persistenceOk=false;this.writeFailedAt=this.now();return false;}
  }
  fresh(task){
   if(task.freshPromise)return task.freshPromise;
@@ -105,21 +108,21 @@ export class CodexStore extends EventEmitter {
   });
   task.freshPromise=promise.finally(()=>{task.freshPromise=null;});return task.freshPromise;
  }
- async act(snapshot,decision){
+ async act(snapshot,decision,{allowed=()=>true}={}){
   const isStop=decision==='stop';
   if(!this.current(snapshot,{progress:isStop}))return false;const task=this.tasks.get(snapshot.id);
-  if(task.sending||!await this.fresh(task)||!this.current(snapshot,{progress:isStop})||task.sending)return false;
+  if(task.sending||!await this.fresh(task)||!this.current(snapshot,{progress:isStop})||task.sending||!allowed())return false;
   const view=this.view(task);
   const approval=view.approval;
   const token=isStop?`stop:${snapshot.revision}`:snapshot.requestId;
   if(task.sending||task.submitted===token||(!isStop&&(!approval||approval.requestId!==snapshot.requestId||!approval.decisions.includes(decision)))||(isStop&&!view.stopAllowed))return false;
   const method=isStop?'thread-follower-interrupt-turn':approval.method,params={conversationId:task.id,...!isStop?{requestId:approval.requestId,decision}:{}};
   const key=!isStop?requestKey(task,approval):null;
-  if(key){if(this.attempts.size>=2048)return false;this.attempts.add(key);if(!this.persistAttempts())return false;}
+  if(key){if(this.attempts.size>=2048)this.attempts.delete(this.attempts.values().next().value);this.attempts.add(key);if(!this.persistAttempts())return false;}
   task.sending=true;task.submitted=token;this.emit('change');
   try{
    for(const version of isStop?[4,3,2,1]:[3,2,1]){
-    const reply=await this.pipe.request(method,version,params,{target:snapshot.owner,beforeWrite:()=>this.current(snapshot,{progress:isStop})&&this.now()-task.seenAt<10_000});
+    const reply=await this.pipe.request(method,version,params,{target:snapshot.owner,beforeWrite:()=>allowed()&&this.current(snapshot,{progress:isStop})&&this.now()-task.seenAt<10_000});
     if(reply.resultType==='success'){task.submitted=snapshot.requestId??`stop:${snapshot.revision}`;return true;}
     if(!['request-version-mismatch','no-handler-for-request'].includes(reply.error))return false;
    }

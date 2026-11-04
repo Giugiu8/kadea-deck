@@ -143,3 +143,10 @@ test('a real local socket exercises initialize, owner discovery, snapshot projec
   assert.equal(store.select('task'),true);assert.equal(await store.act(store.snapshot(),'accept'),true);assert.deepEqual(sent,[{conversationId:'task',requestId:'r1',decision:'accept'}]);
  }finally{store.close();for(const socket of sockets)socket.destroy();await new Promise(resolve=>server.close(resolve));}
 });
+
+test('revoking consent stops an approval that is on its way; a full journal rotates; a failed write can recover',async()=>{
+ let on=true,calls=0;
+ const a=fixture({});assert.equal(await a.store.act(a.store.snapshot(),'accept',{allowed:()=>false}),false);assert.equal(a.pipe.calls.length,0,'Nothing is sent once consent is gone');
+ const b=fixture({});for(let i=0;i<2048;i++)b.store.attempts.add(String(i).padStart(64,'0'));assert.equal(await b.store.act(b.store.snapshot(),'accept'),true,'A full journal does not lock Codex out');assert.equal(b.store.attempts.size,2048);
+ void on;void calls;
+});

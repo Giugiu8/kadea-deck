@@ -1,3 +1,4 @@
+import {hookHome} from './support/hook-home.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -10,7 +11,7 @@ import {DeckStore} from '../src/store.mjs';
 import {startReceiver} from '../src/receiver.mjs';
 const bridge=fileURLToPath(new URL('../hooks/bridge.cjs',import.meta.url));
 function call(home,event,payload){
- const p=spawn(process.execPath,[bridge,event],{env:{...process.env,CARDEA_DECK_HOME:home},windowsHide:true,stdio:['pipe','pipe','pipe']});let stdout='',stderr='';p.stdout.on('data',b=>stdout+=b);p.stderr.on('data',b=>stderr+=b);p.stdin.end(JSON.stringify(payload));
+ const p=spawn(process.execPath,[bridge,event],{env:{...process.env,USERPROFILE:hookHome(home)},windowsHide:true,stdio:['pipe','pipe','pipe']});let stdout='',stderr='';p.stdout.on('data',b=>stdout+=b);p.stderr.on('data',b=>stderr+=b);p.stdin.end(JSON.stringify(payload));
  return once(p,'exit').then(([code])=>({code,stdout,stderr}));
 }
 function removeFixture(dir){assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));assert.ok(path.basename(dir).startsWith('cardea-'));fs.rmSync(dir,{recursive:true,force:true});}
@@ -18,7 +19,7 @@ test('MSIX appdata overlays do not split the native receiver and desktop hook',a
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-msix-'));
  const shared=path.join(dir,'.cardeadeck'),s=new DeckStore(),r=await startReceiver(s,{directory:shared});
  try{
-  const p=spawn(process.execPath,[bridge,'UserPromptSubmit'],{env:{...process.env,USERPROFILE:dir,LOCALAPPDATA:path.join(dir,'claude-private-overlay'),CARDEA_DECK_HOME:''},windowsHide:true,stdio:['pipe','pipe','pipe']});
+  const p=spawn(process.execPath,[bridge,'UserPromptSubmit'],{env:{...process.env,USERPROFILE:dir,LOCALAPPDATA:path.join(dir,'claude-private-overlay')},windowsHide:true,stdio:['pipe','pipe','pipe']});
   let errors='';p.stderr.on('data',b=>errors+=b);p.stdin.end(JSON.stringify({session_id:'msix-fixture',cwd:'G:\\Test'}));
   const [code]=await once(p,'exit');assert.equal(code,0,errors);assert.equal(s.get('msix-fixture')?.state,'working');
   assert.equal(fs.existsSync(path.join(dir,'claude-private-overlay')),false);

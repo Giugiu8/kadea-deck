@@ -20,7 +20,7 @@ fs.mkdirSync(path.join(out,'bin'),{recursive:true});fs.mkdirSync(path.join(out,'
 // development junction. Create it through the real build path before launch.
 fs.mkdirSync(path.join(out,'logs'),{recursive:true});
 // absWorkingDir keeps the bundle's path comments relative, so the checkout location cannot change its bytes.
-await build({absWorkingDir:root,entryPoints:['src/plugin.mjs'],bundle:true,platform:'node',format:'esm',target:'node20',charset:'utf8',legalComments:'inline',outfile:path.join(out,'bin/plugin.mjs'),banner:{js:"import { createRequire } from 'node:module'; const require=createRequire(import.meta.url);"}});
+await build({absWorkingDir:root,entryPoints:['src/plugin.mjs'],bundle:true,platform:'node',format:'esm',target:'node20',charset:'utf8',legalComments:'inline',define:{'process.env.WS_NO_BUFFER_UTIL':'"1"','process.env.WS_NO_UTF_8_VALIDATE':'"1"'},outfile:path.join(out,'bin/plugin.mjs'),banner:{js:"import { createRequire } from 'node:module'; const require=createRequire(import.meta.url);"}});
 for(const name of pluginFiles)if(name.startsWith('hooks/'))fs.copyFileSync(path.join(root,name),path.join(out,name));
 const {cardSvg}=await import('./src/cards.mjs');
 if(!codeOnly){

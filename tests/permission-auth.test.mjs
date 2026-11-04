@@ -1,3 +1,4 @@
+import {hookHome} from './support/hook-home.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -14,7 +15,7 @@ import {startReceiver} from '../src/receiver.mjs';
 const bridge=fileURLToPath(new URL('../hooks/bridge.cjs',import.meta.url));
 const allow=JSON.stringify({hookSpecificOutput:{hookEventName:'PermissionRequest',decision:{behavior:'allow'}}});
 async function hook(home,executable=bridge,event='PermissionRequest'){
- const child=spawn(process.execPath,[executable,event],{env:{...process.env,CARDEA_DECK_HOME:home},windowsHide:true,stdio:['pipe','pipe','pipe']});
+ const child=spawn(process.execPath,[executable,event],{env:{...process.env,USERPROFILE:hookHome(home)},windowsHide:true,stdio:['pipe','pipe','pipe']});
  let stdout='',stderr='';child.stdout.on('data',b=>stdout+=b);child.stderr.on('data',b=>stderr+=b);
  const ended=once(child,'close');child.stdin.end(JSON.stringify({session_id:'isolated-approval',tool_name:'Read',tool_input:{file_path:'C:\\example\\file.txt'},cwd:'C:\\Prüfung-🛡',rate_limits:{five_hour:{used_percentage:10,resets_at:2000000000}}}));
  const [code]=await ended;return{code,stdout,stderr};

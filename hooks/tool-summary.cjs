@@ -9,8 +9,8 @@ const DISPLAY=52;
 // Inputs longer than this are never offered, and are not looked at beyond it.
 const SCAN=4096;
 // Characters whose shape and width on the key are known: no controls, no invisible or combining marks,
-// no right-to-left text, no look-alike alphabets, no wide characters.
-const PLAIN=/^[\u0020-\u007e\u00a1-\u00ac\u00ae-\u024f]*$/;
+// no right-to-left text, no other alphabets and their look-alikes, no wide characters. Latin-1 only.
+const PLAIN=/^[\u0020-\u007e\u00a1-\u00ac\u00ae-\u00ff]*$/;
 const plain=value=>PLAIN.test(value)&&value===value.trim()&&!value.includes('  ');
 const INVISIBLE=/[\u0000-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]+/g;
 const tidy=value=>value.replace(INVISIBLE,' ').replace(/\s+/g,' ').trim();
@@ -43,12 +43,13 @@ function locate(value,cwd){
  // The session folder ends up on the key too, so it has to pass the same checks.
  if(!plain(base))return{blocked:'unusual_characters',text:tidy(path.win32.resolve(base,value))};
  if(unusualPath(base))return{blocked:'unusual_path',text:tidy(path.win32.resolve(base,value))};
- return{text:path.win32.resolve(base,value)};
+ const text=path.win32.resolve(base,value);
+ return text.length>MAX?{blocked:'incomplete_display',text}:{text};
 }
-// Fields of the tools a key can answer that do not widen what the key shows. Anything else, such as a
-// Grep glob or context option, means the key would not be telling the whole story.
-const KNOWN_INPUT={Read:['file_path','offset','limit'],LS:['path'],Glob:['pattern','path'],Grep:['pattern','path','output_mode','head_limit','offset','-i','-n','case_insensitive']};
-const onlyKnownInput=(tool,input)=>!Object.hasOwn(KNOWN_INPUT,tool)||Object.entries(input).every(([key,value])=>KNOWN_INPUT[tool].includes(key)&&(['string','number','boolean'].includes(typeof value))&&(typeof value!=='string'||['file_path','path','pattern','output_mode'].includes(key)));
+// Fields of the tools a key can answer that do not change what the key says. Anything else, such as a
+// Grep glob, context option or content mode, means the key would not be telling the whole story.
+const KNOWN_INPUT={Read:['file_path','offset','limit'],LS:['path'],Glob:['pattern','path'],Grep:['pattern','path','output_mode','head_limit','offset']};
+const onlyKnownInput=(tool,input)=>!Object.hasOwn(KNOWN_INPUT,tool)||Object.entries(input).every(([key,value])=>KNOWN_INPUT[tool].includes(key)&&(['string','number','boolean'].includes(typeof value))&&(typeof value!=='string'||['file_path','path','pattern'].includes(key)||(key==='output_mode'&&value==='files_with_matches')));
 const FIELDS={
  Bash:['text','command'],PowerShell:['text','command'],
  Read:['path','file_path'],Write:['path','file_path'],Edit:['path','file_path'],MultiEdit:['path','file_path'],
@@ -69,10 +70,10 @@ function summarizeSearch(tool,input,cwd){
   else if(/^[A-Za-z]:|^[\\/~]|[%$]/.test(pattern)||pattern.split(/[\\/]/).includes('..')||/\{[^}]*(?:\.\.|[\\/:])/.test(pattern))blocked='unusual_path';
  }
  // The folder comes first: a long pattern must not push it off the key.
- const place=folder.text.length>28?'…'+folder.text.slice(-27):folder.text,shown=redact(shownPattern);
+ const shown=redact(shownPattern);
  // Redaction must not hide what a search looks for, and all of the pattern must fit.
  if(!blocked&&shown!==shownPattern)blocked='incomplete_display';
- const text=[place,shown].filter(Boolean).join(' : ');
+ const text=[folder.text,shown].filter(Boolean).join(' : ');
  if(!blocked&&text.length>DISPLAY)blocked='incomplete_display';
  return{kind:'text',text,...(blocked?{blocked}:{})};
 }
@@ -84,7 +85,7 @@ function summarizeUnknown(input){
  for(const[key,value]of entries){
   if(typeof value!=='string'||value.length>SCAN||key.length>SCAN){blocked??='incomplete_display';if(typeof value==='string')shown.push(`${tidy(key.slice(0,SCAN))}="${tidy(value.slice(0,SCAN))}"`);continue;}
   if(networkPath(value))blocked??='network_path';
-  else if(!plain(key)||!plain(value))blocked??='unusual_characters';
+  else if(!/^[A-Za-z0-9_.-]+$/.test(key)||!plain(value))blocked??='unusual_characters';
   else if(value.includes('"'))blocked??='incomplete_display';
   shown.push(`${tidy(key)}="${tidy(value)}"`);
  }

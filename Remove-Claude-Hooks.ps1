@@ -52,7 +52,7 @@ if(-not(Test-Path -LiteralPath $settings)){Write-Output 'No Claude settings file
 if((Get-Item -LiteralPath $settings).Length -gt 2000000){throw 'Settings file is too large for automatic removal'}
 $lock=Assert-LocalPath (Join-Path $runtime 'integrations.lock')
 # A lock left behind by a process that no longer exists must not block recovery; the plugin handles it the same way.
-if(Test-Path -LiteralPath $lock){$holder=$null;try{$holder=([IO.File]::ReadAllText($lock) | ConvertFrom-Json).pid}catch{};if($holder -is [int] -and -not (Get-Process -Id $holder -ErrorAction SilentlyContinue)){Remove-Item -LiteralPath $lock}}
+if(Test-Path -LiteralPath $lock){$holder=$null;try{$holder=([IO.File]::ReadAllText($lock) | ConvertFrom-Json).pid}catch{};$old=((Get-Date)-(Get-Item -LiteralPath $lock).LastWriteTime).TotalMinutes -gt 10;if($old -or ($holder -is [int] -and -not (Get-Process -Id $holder -ErrorAction SilentlyContinue))){Remove-Item -LiteralPath $lock}}
 $handle=[IO.File]::Open($lock,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
 $temporary=$null
 try{

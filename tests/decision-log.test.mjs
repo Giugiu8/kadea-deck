@@ -1,3 +1,4 @@
+import {hookHome} from './support/hook-home.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -32,7 +33,7 @@ test('a write failure is reported, never thrown into the decision path',()=>temp
  const blocked=path.join(dir,'file');fs.writeFileSync(blocked,'not a directory');
  const log=new DecisionLog({directory:path.join(blocked,'below')});assert.equal(log.record({sessionId:'a',tool:'Read',decision:'allow'}),false);assert.equal(log.ok,false);
 }));
-function hook(home,session,tool,input){const child=spawn(process.execPath,[bridge,'PermissionRequest'],{env:{...process.env,CARDEA_DECK_HOME:home},windowsHide:true,stdio:['pipe','pipe','pipe']});const ended=once(child,'close');child.stdin.end(JSON.stringify({session_id:session,cwd:'G:\\P',tool_name:tool,tool_input:input}));return ended;}
+function hook(home,session,tool,input){const child=spawn(process.execPath,[bridge,'PermissionRequest'],{env:{...process.env,USERPROFILE:hookHome(home)},windowsHide:true,stdio:['pipe','pipe','pipe']});const ended=once(child,'close');child.stdin.end(JSON.stringify({session_id:session,cwd:'G:\\P',tool_name:tool,tool_input:input}));return ended;}
 test('allow, deny, timeout and deferred requests are each recorded once by the real path',()=>temp(async dir=>{
  const store=new DeckStore(),policy=()=>({enabled:true,allowlist:['Read']}),receiver=await startReceiver(store,{directory:dir,policy,timeoutMs:400});
  try{

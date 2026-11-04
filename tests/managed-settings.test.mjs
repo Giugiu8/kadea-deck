@@ -1,4 +1,5 @@
 // Organization-managed hooks: a deployable block, and no writes to the user's settings.
+import {hookHome} from './support/hook-home.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -39,7 +40,7 @@ test('a hook in exec form, as the block defines it, reaches the receiver from an
  const runtime=path.join(dir,'runtime'),store=new DeckStore(),receiver=await startReceiver(store,{directory:runtime});
  try{
   const{command,args}=managedBlock({node:process.execPath,hooks}).hooks.UserPromptSubmit[0].hooks[0];
-  const child=spawn(command,args,{env:{...process.env,CARDEA_DECK_HOME:runtime},windowsHide:true,stdio:['pipe','pipe','pipe']});const ended=once(child,'close');child.stdin.end(JSON.stringify({session_id:'managed-session',cwd:'G:\\Project'}));
+  const child=spawn(command,args,{env:{...process.env,USERPROFILE:hookHome(runtime)},windowsHide:true,stdio:['pipe','pipe','pipe']});const ended=once(child,'close');child.stdin.end(JSON.stringify({session_id:'managed-session',cwd:'G:\\Project'}));
   assert.equal((await ended)[0],0);assert.equal(store.get('managed-session').state,'working');
  }finally{await receiver.close();}
 }));

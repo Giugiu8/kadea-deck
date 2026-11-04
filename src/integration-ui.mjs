@@ -15,7 +15,7 @@ export function registerIntegrationUi({ui,manager,connectCodex,diagnostics=()=>(
   const consenting=p.cmd==='enableApprovals'||p.cmd==='enableCodexApprovals',expected=p.cmd==='enableCodexApprovals'?CODEX_CONSENT:APPROVAL_CONSENT;
   if(!allowed(ev.action)||busy||p.nonce!==token||Object.keys(p).length!==(consenting?3:2)||(consenting&&p.consent!==expected)||!['setupClaude','enableApprovals','disableApprovals','removeStatus','removeClaude','connectCodex','enableCodexApprovals','disableCodexApprovals'].includes(p.cmd))return;
   // Only damaged files stop everything; a folder that cannot be private still allows Codex and a retry.
-  if(blocked()==='integrity_failed'){await send(blocked());return;}
+  if(blocked()==='integrity_failed'&&!['removeStatus','removeClaude','disableApprovals','disableCodexApprovals'].includes(p.cmd)){await send(blocked());return;}
   busy=true;const started=token;await send('working');let result='done';
   try{
    if(token!==started||!current(ev.action))return;

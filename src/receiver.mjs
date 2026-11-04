@@ -9,7 +9,7 @@ import permissionAuth from '../hooks/permission-auth.cjs';
 import { restrictDirectory,restrictFile } from '../windows-acl.mjs';
 const {isHexKey,permissionProof,identityProof}=permissionAuth;
 export async function startReceiver(store,{directory,timeoutMs,getDiagnostics=()=>({}),acl={restrictDirectory,restrictFile},holdable=()=>true,policy=()=>loadPolicy({directory}),log=new DecisionLog({directory})}={}){
-  const token=randomBytes(32).toString('hex'),permissionKey=randomBytes(32).toString('hex'),broker=new PermissionBroker(store,{timeoutMs,log,authorize:request=>evaluateRequest(policy(),request.logTool,request.summary).approvable});
+  const token=randomBytes(32).toString('hex'),permissionKey=randomBytes(32).toString('hex'),broker=new PermissionBroker(store,{timeoutMs,log,authorize:request=>evaluateRequest(policy(),request.logTool,request.summary).approvable&&holdable(request.sessionId)});
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');
     if(req.headers.origin){res.writeHead(403).end('{}');return;}

@@ -25,8 +25,8 @@ export const owned=value=>hookOwner(value)==='cardea';
 // quoted paths need Git Bash. Paths a shell would interpret get no status line: its keys open the usage page.
 export function statusLineCommand(node,script){
  const a=node.replaceAll('\\','/'),b=script.replaceAll('\\','/');
- if(/[%$`!&|<>^;()']/.test(a+b))return null;
- return /\s/.test(a+b)?`"${node}" "${script}"`:`${a} ${b}`;
+ if(/[%$`!]/.test(a+b))return null;
+ return /[\s&|<>^;()']/.test(a+b)?`"${node}" "${script}"`:`${a} ${b}`;
 }
 // status/approval say which groups must exist afterwards; they are independent and
 // approval is never implied. remove: true drops both, 'status' or 'approval' only one.

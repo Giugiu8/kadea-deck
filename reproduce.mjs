@@ -18,10 +18,14 @@ export function readZip(buffer){
  let end=buffer.length-22;
  while(end>=0&&buffer.readUInt32LE(end)!==0x06054b50)end--;
  if(end<0)throw Error('Not a zip archive');
- const count=buffer.readUInt16LE(end+10),entries=new Map(),seen=new Set();let at=buffer.readUInt32LE(end+16);
+ if(end+22+buffer.readUInt16LE(end+20)!==buffer.length)throw Error('Zip has data after its end');
+ if(buffer.readUInt16LE(end+8)!==buffer.readUInt16LE(end+10)||buffer.readUInt16LE(end+10)===0xffff)throw Error('Unsupported zip directory');
+ const count=buffer.readUInt16LE(end+10),entries=new Map(),seen=new Set(),tableSize=buffer.readUInt32LE(end+12),tableStart=buffer.readUInt32LE(end+16),spans=[];let at=tableStart;
  for(let i=0;i<count;i++){
   if(buffer.readUInt32LE(at)!==0x02014b50)throw Error('Damaged zip directory');
-  const method=buffer.readUInt16LE(at+10),size=buffer.readUInt32LE(at+20),nameLength=buffer.readUInt16LE(at+28),extra=buffer.readUInt16LE(at+30),comment=buffer.readUInt16LE(at+32),offset=buffer.readUInt32LE(at+42);
+  const flags=buffer.readUInt16LE(at+8),method=buffer.readUInt16LE(at+10),nameLength=buffer.readUInt16LE(at+28),extra=buffer.readUInt16LE(at+30),comment=buffer.readUInt16LE(at+32);let size=buffer.readUInt32LE(at+20),offset=buffer.readUInt32LE(at+42);
+  // Elgato's packer writes ZIP64 fields: values too large for the normal slot live in an extra record.
+  const full=buffer.readUInt32LE(at+24);for(let i=at+46+nameLength;i+4<=at+46+nameLength+extra;i+=4+buffer.readUInt16LE(i+2))if(buffer.readUInt16LE(i)===1){let field=i+4;if(full===0xffffffff)field+=8;if(size===0xffffffff){size=Number(buffer.readBigUInt64LE(field));field+=8;}if(offset===0xffffffff)offset=Number(buffer.readBigUInt64LE(field));}
   const raw=buffer.subarray(at+46,at+46+nameLength),name=raw.toString('utf8').replaceAll('\\','/'),localName=buffer.readUInt16LE(offset+26),localExtra=buffer.readUInt16LE(offset+28);
   // An extractor may read other names than this reader: anything ambiguous is refused outright.
   if(!buffer.subarray(offset+30,offset+30+localName).equals(raw))throw Error('Zip names disagree: '+name);
@@ -29,10 +33,15 @@ export function readZip(buffer){
   const parts=(name.endsWith('/')?name.slice(0,-1):name).split('/');
   if(name.startsWith('/')||parts.some(part=>!part||part==='.'||part==='..'||/[. ]$/.test(part)||/[:\x00-\x1f]/.test(part)))throw Error('Unsafe zip name: '+name);
   const fold=name.toLowerCase();if(seen.has(fold))throw Error('Zip names collide: '+name);seen.add(fold);
-  const start=offset+30+localName+localExtra,data=buffer.subarray(start,start+size);
+  const start=offset+30+localName+localExtra,data=buffer.subarray(start,start+size);spans.push({offset,end:start+size,flags});
   if(!name.endsWith('/'))entries.set(name,method===0?data:zlib.inflateRawSync(data));
   at+=46+nameLength+extra+comment;
  }
+ // An entry the directory does not list would still be seen by other extractors.
+ if(at-tableStart!==tableSize||at!==end)throw Error('Zip directory does not match its size');
+ spans.sort((a,b)=>a.offset-b.offset);let next=0;
+ for(const span of spans){const gap=span.offset-next;if(gap<0||(gap>0&&!(next>0&&gap<=24)))throw Error('Zip has unlisted data');next=span.end;}
+ const last=tableStart-next;if(last<0||last>24)throw Error('Zip has unlisted data');
  return entries;
 }
 function loadFolder(directory){

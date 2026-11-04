@@ -1,4 +1,5 @@
 // Keys answer only allowlisted low-risk tools, and only with the concrete request visible.
+import {hookHome} from './support/hook-home.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -78,7 +79,7 @@ test('a machine policy can only narrow the user configuration',()=>temp(dir=>{
 }));
 
 function hook(home,payload){
- const child=spawn(process.execPath,[bridge,'PermissionRequest'],{env:{...process.env,CARDEA_DECK_HOME:home},windowsHide:true,stdio:['pipe','pipe','pipe']});let stdout='';child.stdout.on('data',b=>stdout+=b);
+ const child=spawn(process.execPath,[bridge,'PermissionRequest'],{env:{...process.env,USERPROFILE:hookHome(home)},windowsHide:true,stdio:['pipe','pipe','pipe']});let stdout='';child.stdout.on('data',b=>stdout+=b);
  const ended=once(child,'close');child.stdin.end(JSON.stringify(payload));return ended.then(([code])=>({code,stdout}));
 }
 const allowed=()=>({enabled:true,allowlist:['Read']});
@@ -130,7 +131,7 @@ test('network and device paths never wait for a key, through any read-only tool'
  assert.equal(verdict('Grep',{pattern:'\\\\d+',path:'C:\\a'}).approvable,true,'A search pattern with backslashes is no path');
 });
 test('a request with invisible characters stays in the dialog',()=>{
- for(const cp of [0x200b,0x202e,0xad,0x0a,0x61c,0x180e,0x206a,0xfff9,0xe0041,0x34f,0x3164,0xfe0f,0xa0,0x5d0,0x627,0x430,0x3b1,0x8cc7,0x1f6e1]){const value='C:\\a\\b'+String.fromCodePoint(cp)+'c.txt';assert.equal(verdict('Read',{file_path:value}).reason,'unusual_characters','U+'+cp.toString(16));}
+ for(const cp of [0x200b,0x202e,0xad,0x0a,0x61c,0x180e,0x206a,0xfff9,0xe0041,0x34f,0x3164,0xfe0f,0xa0,0x5d0,0x627,0x430,0x3b1,0x8cc7,0x1f6e1,0x131,0x17f,0x1c3,0x1c0]){const value='C:\\a\\b'+String.fromCodePoint(cp)+'c.txt';assert.equal(verdict('Read',{file_path:value}).reason,'unusual_characters','U+'+cp.toString(16));}
  assert.equal(verdict('Read',{file_path:'C:\\a\\Prüfung Größe.txt'}).approvable,true,'Ordinary Western text is fine');
  assert.equal(verdict('Read',{file_path:'C:\\work\\public  report.txt'}).reason,'unusual_characters','Two spaces name another file than one');
  assert.equal(verdict('Read',{file_path:' C:\\a.txt'}).approvable,false);
@@ -151,14 +152,14 @@ test('the key shows where a path really leads',()=>{
 test('a long search pattern cannot push the searched folder off the key',()=>{
  const lines=detailLines(summarizeTool('Grep',{pattern:'a'.repeat(200),path:'C:\\Users\\me\\.ssh'})).join('');
  assert.ok(lines.startsWith('C:\\Users\\me\\.ssh'),lines);
- const deep=detailLines(summarizeTool('Glob',{pattern:'b'.repeat(200),path:'C:\\'+'x'.repeat(80)+'\\.ssh'})).join('');
- assert.ok(deep.includes('.ssh'),deep);
+ assert.equal(summarizeTool('Glob',{pattern:'*.txt',path:'C:\\'+'x'.repeat(80)+'\\.ssh'}).blocked,'incomplete_display','A folder that does not fit whole stays in the dialog');
 });
 test('unknown tools must show their whole input or stay in the dialog',()=>{
  assert.equal(verdict('mcp__x__send',{to:'me'}).approvable,true);
  assert.equal(verdict('mcp__x__send',{to:'me',options:{bcc:'other'}}).reason,'incomplete_display');
  assert.equal(verdict('mcp__x__send',{dry_run:'true path=x'}).approvable,true);assert.notEqual(summarizeTool('mcp__x__send',{dry_run:'true path=x'}).text,summarizeTool('mcp__x__send',{dry_run:'true',path:'x'}).text,'Two different inputs must look different');
  assert.equal(verdict('mcp__x__send',{a:'b"c'}).reason,'incomplete_display');
+ assert.equal(verdict('mcp__x__send',{'to="me" msg':'x'}).approvable,false,'A key cannot pretend to be two arguments');
  assert.equal(verdict('mcp__x__send',{password_reset_for:'admin'}).reason,'incomplete_display','Redaction must not hide what an unknown tool does');
  assert.equal(verdict('mcp__x__send',{command:' '.repeat(5000)+'payload'}).approvable,false);
  for(const value of ['\\\\host\\share\\x','//host/x','file://host/x','https://example.test/x'])assert.equal(verdict('mcp__x__send',{path:value}).reason,'network_path',value);
@@ -227,7 +228,8 @@ test('reserved device names and short names stay in the dialog',()=>{
 });
 test('fields the key does not show keep a request in the dialog',()=>{
  for(const[tool,input]of [['Grep',{pattern:'TODO',path:'C:\\a',glob:'**/.ssh/*'}],['Grep',{pattern:'a',path:'C:\\a','-C':100000}],['Grep',{pattern:'a',path:'C:\\a',multiline:true}],['Read',{file_path:'C:\\a.txt',extra:'\\\\host\\x'}],['Read',{file_path:'C:\\a.txt',offset:'x'}],['LS',{path:'C:\\a',ignore:['x']}]])assert.equal(summarizeTool(tool,input).blocked,'incomplete_display',JSON.stringify(input));
- assert.equal(summarizeTool('Read',{file_path:'C:\\a.txt',offset:10,limit:20}).blocked,undefined);assert.equal(summarizeTool('Grep',{pattern:'a',path:'C:\\a',output_mode:'content','-n':true,head_limit:50}).blocked,undefined);
+ assert.equal(summarizeTool('Read',{file_path:'C:\\a.txt',offset:10,limit:20}).blocked,undefined);assert.equal(summarizeTool('Grep',{pattern:'a',path:'C:\\a',output_mode:'files_with_matches',head_limit:50}).blocked,undefined);
+ for(const extra of [{output_mode:'content'},{output_mode:'count'},{'-i':true},{'-n':true}])assert.equal(summarizeTool('Grep',{pattern:'a',path:'C:\\a',...extra}).blocked,'incomplete_display',JSON.stringify(extra));
 });
 test('a search must be shown whole and unredacted',()=>{
  assert.equal(summarizeTool('Grep',{pattern:'token=x|BEGIN.*PRIVATE',path:'C:\\proj'}).blocked,'incomplete_display');
@@ -238,6 +240,7 @@ test('a search must be shown whole and unredacted',()=>{
 });
 test('a very long path reaches neither key nor inspector',()=>{
  assert.equal(summarizeTool('Read',{file_path:'C:\\'+'a\\'.repeat(200)+'b.txt'}).blocked,'incomplete_display');
+ assert.equal(summarizeTool('Read',{file_path:'a\\'.repeat(125)+'secret.txt'},'C:\\work').blocked,'incomplete_display','Relative spelling changes nothing');
 });
 test('the hook prints only its own decision, whatever a signed reply adds',()=>temp(async dir=>{
  const http=await import('node:http'),{randomBytes,createHmac}=await import('node:crypto');
@@ -263,3 +266,12 @@ test('Codex approvals have their own off-by-default consent and honor the machin
  writeConfig(dir,{approvalsEnabled:false,codexApprovalsEnabled:true});assert.equal(load().codexEnabled,true);assert.equal(load().enabled,false);
  fs.writeFileSync(machineFile,'{"approvalsAllowed":false}');assert.equal(load().codexEnabled,false);
 }));
+
+test('the hook takes its folder from the profile only',()=>{
+ const {runtimeDirectory}=createRequire(import.meta.url)('../hooks/runtime.cjs');
+ assert.equal(runtimeDirectory({USERPROFILE:'C:\\Users\\me',CARDEA_DECK_HOME:'C:\\elsewhere'}),path.join('C:\\Users\\me','.cardeadeck'));
+});
+test('the bundle cannot load optional native add-ons from next to the plugin',()=>{
+ const bundle=fs.readFileSync('dist/de.cardea.deck.sdPlugin/bin/plugin.mjs','utf8');
+ assert.ok(!bundle.includes('process.env.WS_NO_BUFFER_UTIL')&&!bundle.includes('process.env.WS_NO_UTF_8_VALIDATE'));
+});

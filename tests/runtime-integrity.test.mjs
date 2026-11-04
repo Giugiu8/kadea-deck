@@ -111,3 +111,10 @@ test('if permissions cannot be set, no keys are published and no service starts'
  await assert.rejects(startReceiver(new DeckStore(),{directory:runtime,acl:lateFailure}),/acl_failed/);
  assert.deepEqual(fs.readdirSync(runtime),[],'No temporary key file remains');
 }));
+
+test('a file that cannot be read is reported differently from a changed one',()=>temp(dir=>{
+ plugin(dir);const file=path.join(dir,'hooks/bridge.cjs'),original=fs.readFileSync;
+ fs.readFileSync=(target,...rest)=>{if(path.resolve(String(target))===path.resolve(file))throw Object.assign(Error('locked'),{code:'EBUSY'});return original(target,...rest);};
+ try{assert.equal(check(dir).reason,'file_unreadable');}finally{fs.readFileSync=original;}
+ assert.equal(check(dir),null);
+}));

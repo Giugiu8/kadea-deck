@@ -123,3 +123,10 @@ test('the SBOM source covers every package that really ends up in the bundle',()
  const lock=JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'))),runtime=new Set(Object.entries(lock.packages).filter(([name,entry])=>name&&!entry.dev).map(([name])=>name.split('node_modules/').at(-1)));
  for(const name of inBundle)assert.ok(runtime.has(name),name);
 });
+
+test('an archive with entries beyond what its directory declares is refused',()=>{
+ const good=zipOf([['a.txt','1'],['b.txt','2']]);assert.equal(readZip(good).size,2);
+ assert.throws(()=>readZip(Buffer.concat([good,Buffer.from('x')])),/Zip/,'Data after the end');
+ const short=Buffer.from(good);const end=short.length-22;short.writeUInt16LE(1,end+8);short.writeUInt16LE(1,end+10);assert.throws(()=>readZip(short),/Zip/,'A directory entry past the count');
+ const prefixed=zipOf([['b.txt','2']]);assert.throws(()=>readZip(Buffer.concat([Buffer.from('hidden'),prefixed])),/zip/i,'Data before the first entry');
+});

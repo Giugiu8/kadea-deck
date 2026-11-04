@@ -11,14 +11,14 @@ const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 // Returns null when every listed file matches, otherwise a short reason without file contents.
 export function verifyPluginFiles(directory,{required=checkedFiles}={}){
  let manifest;
- try{manifest=JSON.parse(fs.readFileSync(path.join(directory,integrityFile),'utf8'));}catch{return{reason:'manifest_unreadable'};}
+ try{manifest=JSON.parse(fs.readFileSync(path.join(directory,integrityFile),'utf8'));}catch(error){return{reason:error.code&&error.code!=='ENOENT'?'file_unreadable':'manifest_unreadable',file:integrityFile};}
  if(manifest?.schema!==1||!manifest.files||typeof manifest.files!=='object'||Array.isArray(manifest.files))return{reason:'manifest_invalid'};
  const root=path.resolve(directory);
  for(const name of required)if(!Object.hasOwn(manifest.files,name))return{reason:'manifest_incomplete',file:name};
  for(const[name,expected]of Object.entries(manifest.files)){
   const file=path.resolve(root,name);
   if(!file.startsWith(root+path.sep)||typeof expected!=='string'||!/^[a-f0-9]{64}$/.test(expected))return{reason:'manifest_invalid',file:name};
-  let actual;try{actual=sha256(fs.readFileSync(file));}catch{return{reason:'file_missing',file:name};}
+  let actual;try{actual=sha256(fs.readFileSync(file));}catch(error){return{reason:error.code==='ENOENT'?'file_missing':'file_unreadable',file:name};}
   if(actual!==expected)return{reason:'file_changed',file:name};
  }
  return null;

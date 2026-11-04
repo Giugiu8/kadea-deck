@@ -44,10 +44,14 @@ export function createIntegrations({home,appData,plugin,node=process.execPath,be
    const groups=installedGroups(input,{node,plugin});
    const approvals=policy.lockedOff?'locked_off':groups.approvalPresent?(!policy.enabled?'hook_inactive':groups.approval?'on':'repair_needed'):'off';
    return{claude:groups.status?'installed':groups.statusPresent?'repair_needed':'not_set_up',approvals,codexApprovals,customStatusLine:custom,allowlist:policy.allowlist};
-  }catch(error){return{claude:['plugin_location','linked_path','incomplete_plugin','runtime_missing','custom_config'].includes(error.message)?error.message:'invalid_settings',approvals:'off',customStatusLine:false};}
+  }catch(error){let codexApprovals='off';try{const policy=loadPolicy({directory:runtime(),machineFile});codexApprovals=policy.lockedOff?'locked_off':policy.codexEnabled?'on':'off';}catch{}return{claude:['plugin_location','linked_path','incomplete_plugin','runtime_missing','custom_config'].includes(error.message)?error.message:'invalid_settings',approvals:'off',codexApprovals,customStatusLine:false};}
  }
  function update(command,{consent}={}){
-  if(!COMMANDS.includes(command))fail('invalid_command');validate();
+  if(!COMMANDS.includes(command))fail('invalid_command');
+  const codexOnly=['enableCodexApprovals','disableCodexApprovals'].includes(command);
+  // Turning something off must work even when Claude's settings are in a state setup refuses.
+  if(['disableApprovals','removeClaude','disableCodexApprovals'].includes(command))try{validate({claude:false});const folder=runtime();fs.mkdirSync(folder,{recursive:true,mode:0o700});writeConfig(folder,command==='disableCodexApprovals'?{codexApprovalsEnabled:false}:{approvalsEnabled:false});}catch{}
+  validate({claude:!codexOnly});
   if(command==='enableApprovals'&&consent!==APPROVAL_CONSENT)fail('consent_required');
   if(command==='enableCodexApprovals'&&consent!==CODEX_CONSENT)fail('consent_required');
   const target=settings(),root=runtime();fs.mkdirSync(root,{recursive:true,mode:0o700});
@@ -68,9 +72,13 @@ export function createIntegrations({home,appData,plugin,node=process.execPath,be
   const lock=safePath(home,path.join(root,'integrations.lock'));let handle;
   try{handle=fs.openSync(lock,'wx');}catch(error){
    if(error.code!=='EEXIST')throw error;
-   let prior;try{prior=JSON.parse(fs.readFileSync(lock,'utf8'));}catch{fail('busy');}
-   if(!Number.isInteger(prior.pid)||!Number.isFinite(prior.at))fail('busy');
-   try{process.kill(prior.pid,0);fail('busy');}catch(probe){if(probe.code!=='ESRCH')fail('busy');}
+   // A setup takes moments: an old lock is left over, even if its process ID was reused.
+   const old=Date.now()-fs.statSync(lock).mtimeMs>10*60_000;
+   if(!old){
+    let prior;try{prior=JSON.parse(fs.readFileSync(lock,'utf8'));}catch{fail('busy');}
+    if(!Number.isInteger(prior.pid)||!Number.isFinite(prior.at))fail('busy');
+    try{process.kill(prior.pid,0);fail('busy');}catch(probe){if(probe.code!=='ESRCH')fail('busy');}
+   }
    fs.unlinkSync(lock);handle=fs.openSync(lock,'wx');
   }
   let temp;

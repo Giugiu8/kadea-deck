@@ -41,3 +41,21 @@ test('custom Claude configuration does not block the independent Codex connectio
  assert.equal(manager.status().claude,'custom_config');assert.throws(()=>manager.update('setupClaude'),/custom_config/);
  manager.saveCodex(f.node);assert.equal(manager.codexEnabled(),true);assert.deepEqual(fs.readFileSync(f.settings),before);
 }));
+
+test('turning approvals off works when Claude settings cannot be used, and Codex consent does not need them',()=>fixture(f=>{
+ const manager=f.create({configDir:path.join(f.dir,'custom')}),config=path.join(f.home,'.cardeadeck/config.json');
+ f.put(config,{schema:1,approvalsEnabled:true});
+ assert.throws(()=>manager.update('disableApprovals'),/custom_config/);assert.equal(JSON.parse(fs.readFileSync(config)).approvalsEnabled,false,'Off comes first');
+ assert.equal(manager.update('enableCodexApprovals',{consent:'approve-codex-by-key'}).codexApprovals,'on','The status names the Claude problem and still reports Codex');
+ assert.equal(JSON.parse(fs.readFileSync(config)).codexApprovalsEnabled,true);
+ manager.update('disableCodexApprovals');assert.equal(JSON.parse(fs.readFileSync(config)).codexApprovalsEnabled,false);
+ assert.throws(()=>manager.update('enableCodexApprovals'),/consent_required/);
+ f.put(f.settings,'{broken');f.put(config,{schema:1,approvalsEnabled:true});
+ assert.throws(()=>f.create().update('disableApprovals'),/invalid_settings/);assert.equal(JSON.parse(fs.readFileSync(config)).approvalsEnabled,false);
+}));
+test('a lock left behind for a long time does not block setup',()=>fixture(f=>{
+ const lock=path.join(f.home,'.cardeadeck/integrations.lock');f.put(lock,'');
+ assert.throws(()=>f.create().update('setupClaude'),/busy/);
+ const past=new Date(Date.now()-3600_000);fs.utimesSync(lock,past,past);
+ assert.equal(f.create().update('setupClaude').claude,'installed');
+}));

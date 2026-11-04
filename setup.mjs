@@ -77,8 +77,10 @@ function rollback(undo){
   else if(fs.existsSync(item.target))fs.renameSync(item.target,item.target+'.cardea-failed-'+randomUUID());
  }
 }
+// An installation takes minutes at most: an older lock is left over from a killed run.
+function clearOldLock(lock){try{if(Date.now()-fs.statSync(lock).mtimeMs>30*60_000)fs.unlinkSync(lock);}catch{}}
 export function applyPlan(plan,{host=()=>{}}={}){
- const {runtime,migration}=plan;fs.mkdirSync(runtime,{recursive:true,mode:0o700});restrictDirectory(runtime);const lock=path.join(runtime,'install.lock');
+ const {runtime,migration}=plan;fs.mkdirSync(runtime,{recursive:true,mode:0o700});restrictDirectory(runtime);const lock=path.join(runtime,'install.lock');clearOldLock(lock);
  let oldHandle=null,handle=null;const undo=[];let stopped=false;
  if(migration)oldHandle=fs.openSync(path.join(migration.runtime,'install.lock'),'wx');
  try{handle=fs.openSync(lock,'wx');}catch(error){if(oldHandle!==null){fs.closeSync(oldHandle);fs.unlinkSync(path.join(migration.runtime,'install.lock'));}throw error;}

@@ -71,7 +71,7 @@ Your EDR may ask about these, all started by Stream Deck's `node.exe`:
 | `explorer.exe <link>` | On a key press | Opens `claude://`, `codex://` and the usage page |
 | `powershell.exe` | Starting Codex integration | Finds the Codex Store package; works in Constrained Language Mode |
 
-If `icacls` or `whoami` are blocked, the plugin serves no Claude hooks: Claude keeps its normal dialogs, Approve keys say "Hooks off", and Codex keys keep working.
+If `icacls` or `whoami` are blocked, the plugin serves no Claude hooks and tries again every minute: Claude keeps its normal dialogs, Approve keys say "Hooks off", and Codex keys keep working.
 
 ## Other things to know
 

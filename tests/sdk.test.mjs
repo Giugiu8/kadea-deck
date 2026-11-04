@@ -1,3 +1,4 @@
+import {hookHome} from './support/hook-home.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -21,7 +22,7 @@ test('built plugin registers with the real SDK and renders live receiver events 
  execFileSync(path.join(process.env.WINDIR,'Microsoft.NET/Framework64/v4.0.30319/csc.exe'),['/nologo','/target:winexe',`/out:${path.join(win,'explorer.exe')}`,helperSource],{windowsHide:true});
  const server=new WebSocketServer({port:0,host:'127.0.0.1'});await once(server,'listening');
  const info={application:{font:'Segoe UI',language:'de',platform:'windows',platformVersion:'10',version:'7.6.0'},plugin:{uuid:'de.cardea.deck',version:'0.1.0.0'},devices:[{id:'test-device',name:'Test',size:{columns:5,rows:3},type:0}]};
- const p=spawn(process.execPath,[path.join(bin,'plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...Object.fromEntries(Object.entries(process.env).filter(([name])=>!/^(windir|programfiles|programdata)$/i.test(name))),WINDIR:win,ProgramFiles:path.join(dir,'program-files'),ProgramData:path.join(dir,'program-data'),APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir,CARDEA_DECK_HOME:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ const p=spawn(process.execPath,[path.join(bin,'plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...Object.fromEntries(Object.entries(process.env).filter(([name])=>!/^(windir|programfiles|programdata)$/i.test(name))),WINDIR:win,ProgramFiles:path.join(dir,'program-files'),ProgramData:path.join(dir,'program-data'),APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir},stdio:['ignore','pipe','pipe'],windowsHide:true});
  let stderr='',socket;const messages=[];p.stderr.on('data',b=>stderr+=b);
  const deadline=setTimeout(()=>p.kill(),20_000);deadline.unref();
  try{
@@ -74,7 +75,7 @@ test('built plugin registers with the real SDK and renders live receiver events 
   await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='test-key'));
   const post=(route,event,extra={})=>fetch(base+route,{method:'POST',headers,body:JSON.stringify({event,sessionId:'sdk-fixture',eventId:`sdk-${++seq}`,at:Date.now(),cwd:'G:\\TestProject',...extra})});let seq=0;
   const permission=(tool,tool_input)=>{
-   const hook=spawn(process.execPath,[path.join(root,'dist/de.cardea.deck.sdPlugin/hooks/bridge.cjs'),'PermissionRequest'],{env:{...process.env,CARDEA_DECK_HOME:path.join(dir,'.cardeadeck')},windowsHide:true,stdio:['pipe','pipe','pipe']});
+   const hook=spawn(process.execPath,[path.join(root,'dist/de.cardea.deck.sdPlugin/hooks/bridge.cjs'),'PermissionRequest'],{env:{...process.env,USERPROFILE:hookHome(path.join(dir,'.cardeadeck'))},windowsHide:true,stdio:['pipe','pipe','pipe']});
    let output='',errors='';hook.stdout.on('data',b=>output+=b);hook.stderr.on('data',b=>errors+=b);
    const ended=once(hook,'close');hook.stdin.end(JSON.stringify({session_id:'sdk-fixture',tool_name:tool,tool_input,cwd:'G:\\TestProject'}));
    return ended.then(([code])=>{assert.equal(code,0,errors);assert.equal(errors,'');return output?JSON.parse(output):{};});
@@ -124,7 +125,7 @@ test('changed plugin files stop hook service and show a warning, while hooks fal
  const runtime=path.join(dir,'.cardeadeck');fs.mkdirSync(runtime);fs.writeFileSync(path.join(runtime,'connection.json'),'{"schema":2,"stale":true}');
  const server=new WebSocketServer({port:0,host:'127.0.0.1'});await once(server,'listening');
  const info={application:{font:'Segoe UI',language:'de',platform:'windows',platformVersion:'10',version:'7.6.0'},plugin:{uuid:'de.cardea.deck',version:'0.1.0.0'},devices:[{id:'test-device',name:'Test',size:{columns:5,rows:3},type:0}]};
- const p=spawn(process.execPath,[path.join(pluginRoot,'bin/plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...process.env,APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir,CARDEA_DECK_HOME:''},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ const p=spawn(process.execPath,[path.join(pluginRoot,'bin/plugin.mjs'),'-port',String(server.address().port),'-pluginUUID','de.cardea.deck','-registerEvent','registerPlugin','-info',JSON.stringify(info)],{cwd:pluginRoot,env:{...process.env,APPDATA:appData,LOCALAPPDATA:appData,USERPROFILE:dir},stdio:['ignore','pipe','pipe'],windowsHide:true});
  let stderr='',socket;const messages=[];p.stderr.on('data',b=>stderr+=b);const deadline=setTimeout(()=>p.kill(),10_000);deadline.unref();
  try{
   [socket]=await Promise.race([once(server,'connection'),once(p,'exit').then(([code])=>{throw Error('Plugin startup failed ('+code+'): '+stderr);})]);socket.on('message',b=>messages.push(JSON.parse(b)));
@@ -136,7 +137,7 @@ test('changed plugin files stop hook service and show a warning, while hooks fal
   assert.equal(fs.existsSync(path.join(runtime,'connection.json')),false,'No receiver is published and a stale one is removed');
   socket.send(JSON.stringify({event:'keyDown',action:'de.cardea.deck.permission',context:'warned-key',device:'test-device',payload}));
   await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='warned-key'));
-  const hook=spawn(process.execPath,[path.join(pluginRoot,'hooks/bridge.cjs'),'PermissionRequest'],{env:{...process.env,CARDEA_DECK_HOME:runtime},windowsHide:true,stdio:['pipe','pipe','pipe']});let output='';hook.stdout.on('data',b=>output+=b);const ended=once(hook,'close');hook.stdin.end(JSON.stringify({session_id:'x',tool_name:'Read',tool_input:{file_path:'C:/a'}}));
+  const hook=spawn(process.execPath,[path.join(pluginRoot,'hooks/bridge.cjs'),'PermissionRequest'],{env:{...process.env,USERPROFILE:hookHome(runtime)},windowsHide:true,stdio:['pipe','pipe','pipe']});let output='';hook.stdout.on('data',b=>output+=b);const ended=once(hook,'close');hook.stdin.end(JSON.stringify({session_id:'x',tool_name:'Read',tool_input:{file_path:'C:/a'}}));
   assert.equal((await ended)[0],0);assert.equal(output,'','No decision: Claude uses its own dialog');
  }finally{clearTimeout(deadline);if(p.exitCode===null&&p.signalCode===null){const ended=once(p,'exit');p.kill();await ended;}socket?.terminate();await new Promise(resolve=>server.close(resolve));assert.ok(path.basename(dir).startsWith('cardea-sdk-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
