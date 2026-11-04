@@ -15,14 +15,14 @@ try{
  // diagnostic files: include only the known build outputs.
  for(const rel of pluginFiles){const destination=path.join(bundle,plugin,rel);fs.mkdirSync(path.dirname(destination),{recursive:true});fs.copyFileSync(path.join(root,'dist',plugin,rel),destination);}
  fs.cpSync(path.join(root,'dist/profile-template'),path.join(bundle,'profile-template'),{recursive:true});
- const files=['setup.mjs','setup-hooks.mjs','claude-hooks.mjs','windows-acl.mjs','migration.mjs','migration-artwork.json','Setup.ps1','Uninstall.ps1','host.ps1','Doctor.ps1','doctor.mjs','Install.cmd','Uninstall.cmd','Remove-Claude-Hooks.ps1','LICENSE','README.md','SECURITY.md','CHANGELOG.md'];
+ const files=['setup.mjs','setup-hooks.mjs','claude-hooks.mjs','windows-acl.mjs','managed-settings.mjs','THREAT-MODEL.md','migration.mjs','migration-artwork.json','Setup.ps1','Uninstall.ps1','host.ps1','Doctor.ps1','doctor.mjs','Install.cmd','Uninstall.cmd','Remove-Claude-Hooks.ps1','LICENSE','README.md','SECURITY.md','CHANGELOG.md'];
  for(const file of files)fs.copyFileSync(path.join(root,file),path.join(bundle,file));fs.cpSync(path.join(root,'docs'),path.join(bundle,'docs'),{recursive:true});
  let notices='Cardea Deck runtime dependency licenses\n\n';const lock=JSON.parse(fs.readFileSync(path.join(root,'package-lock.json')));const dependencies=[];
  for(const [rel,entry]of Object.entries(lock.packages)){if(!rel||entry.dev||!fs.existsSync(path.join(root,rel)))continue;const directory=path.join(root,rel),pkg=JSON.parse(fs.readFileSync(path.join(directory,'package.json')));const license=fs.readdirSync(directory).find(n=>/^licen[sc]e(?:\.txt|\.md)?$/i.test(n));if(!license)throw Error('Missing dependency license: '+pkg.name);notices+='\n--- '+pkg.name+' '+pkg.version+' ---\n'+fs.readFileSync(path.join(directory,license),'utf8')+'\n';dependencies.push({name:pkg.name,version:pkg.version,license:pkg.license});}
  fs.writeFileSync(path.join(bundle,'THIRD-PARTY-NOTICES.txt'),notices);fs.writeFileSync(path.join(bundle,plugin,'THIRD-PARTY-NOTICES.txt'),notices);fs.copyFileSync(path.join(root,'LICENSE'),path.join(bundle,plugin,'LICENSE'));
  fs.writeFileSync(path.join(bundle,'DEPENDENCIES.json'),JSON.stringify(dependencies,null,2)+'\n');
  let commit;try{commit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','ignore']}).trim();}catch{commit='uncommitted';}
- fs.writeFileSync(path.join(bundle,'build-info.json'),JSON.stringify({version,sourceCommit:commit,platform:'windows',device:'Stream Deck MK.2'},null,2));
+ fs.writeFileSync(path.join(bundle,'build-info.json'),JSON.stringify({version,sourceCommit:commit,builtBy:process.env.GITHUB_ACTIONS==='true'?'github-actions':'local-not-a-release',platform:'windows',device:'Stream Deck MK.2'},null,2));
  const hashes={};function walk(directory){for(const entry of fs.readdirSync(directory,{withFileTypes:true})){const file=path.join(directory,entry.name);if(entry.isDirectory())walk(file);else hashes[path.relative(bundle,file).replaceAll('\\','/')]=createHash('sha256').update(fs.readFileSync(file)).digest('hex');}}walk(bundle);
  fs.writeFileSync(path.join(bundle,'integrity.json'),JSON.stringify({schema:1,version,files:hashes},null,2));
  const archive=path.join(release,`Cardea-Deck-${version}-advanced-portable.zip`);
@@ -31,7 +31,9 @@ try{
  node('node_modules/@elgato/cli/bin/streamdeck.mjs','pack','--force','--no-update-check','--no-file-list','--output',release,path.join(bundle,plugin));
  const pluginDownload=`Cardea-Deck-${version}.streamDeckPlugin`;fs.copyFileSync(path.join(release,'de.cardea.deck.streamDeckPlugin'),path.join(release,pluginDownload));
  fs.copyFileSync(path.join(root,'Remove-Claude-Hooks.ps1'),path.join(release,'Remove-Claude-Hooks.ps1'));
- const artifacts=[path.basename(archive),pluginDownload,'Remove-Claude-Hooks.ps1'];fs.writeFileSync(path.join(release,'SHA256SUMS.txt'),artifacts.map(name=>createHash('sha256').update(fs.readFileSync(path.join(release,name))).digest('hex')+'  '+name).join('\n')+'\n');
+ // Runtime dependencies as installed from the lockfile; npm comes with Node.
+ const sbomName=`Cardea-Deck-${version}.cdx.json`;fs.writeFileSync(path.join(release,sbomName),execFileSync(process.execPath,[path.join(path.dirname(process.execPath),'node_modules/npm/bin/npm-cli.js'),'sbom','--omit=dev','--sbom-format','cyclonedx','--sbom-type','application'],{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:8*1024*1024}));
+ const artifacts=[path.basename(archive),pluginDownload,'Remove-Claude-Hooks.ps1',sbomName];fs.writeFileSync(path.join(release,'SHA256SUMS.txt'),artifacts.map(name=>createHash('sha256').update(fs.readFileSync(path.join(release,name))).digest('hex')+'  '+name).join('\n')+'\n');
  console.log(JSON.stringify(verifyRelease(release)));
  console.log('Release assets prepared in release/. No local configuration exported.');
 }finally{

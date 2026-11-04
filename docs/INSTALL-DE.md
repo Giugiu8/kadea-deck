@@ -5,18 +5,39 @@ Cardea Deck ist eine experimentelle Windows-Beta für das Stream Deck MK.2 mit 1
 1. Stream Deck 7.1 oder neuer sowie Claude und Codex installieren und lokal anmelden. Das MK.2 anschließen. Elgatos offizielles Codex-Plugin zusätzlich installieren, wenn Dictate, Modellauswahl und Verbrauchstasten genutzt werden sollen.
 2. Im [aktuellen Release](https://github.com/Giugiu8/cardea-deck/releases) **Cardea-Deck-0.8.0.streamDeckPlugin** herunterladen und doppelklicken. Die Installation in Stream Deck bestätigen.
 3. Das angebotene vierseitige Profil importieren. Ein bestehendes Profil bleibt erhalten. Wer bereits ein angepasstes Cardea-Profil hat, kann dieses behalten und das zusätzliche Profilangebot ablehnen.
-4. Im Stream-Deck-Editor eine Cardea-**Chat-Taste** auswählen. Unten unter **Local connections** erst **Set up Claude**, dann **Connect Codex** anklicken. Vorhandene fremde Hooks und eine eigene Statusline bleiben erhalten; geänderte Einstellungen werden lokal gesichert. Auf Freigabe-/Stop-Tasten wird keine Einrichtung angeboten.
+4. Im Stream-Deck-Editor eine Cardea-**Chat-Taste** auswählen. Unten unter **Local connections** erst **Set up Claude**, dann **Connect Codex** anklicken. Ab Version 0.9 richtet **Set up Claude** nur die Status-Hooks ein. Vorhandene fremde Hooks und eine eigene Statusline bleiben erhalten; geänderte Einstellungen werden lokal gesichert. Auf Freigabe-/Stop-Tasten wird keine Einrichtung angeboten.
 5. Einen neuen Claude-Chat starten, damit die aktualisierten Hooks geladen werden. Codex geöffnet lassen. Auf **Apps** die fünf **Choose app**-Tasten den lokalen Arbeitsprogrammen zuweisen.
 
 „Hooks installed“ bestätigt den Eintrag in den Einstellungen; „source active“ benötigt ein tatsächlich empfangenes Ereignis. Fehlende Statusquellen bleiben **UNKNOWN**. Bei einer fremden Claude-Statusline kann die Claude-Verbrauchstaste nur die echte Verbrauchsseite öffnen. Nach einem Stream-Deck-Runtime-Update lässt sich eine angezeigte nötige Reparatur mit **Set up Claude** durchführen.
+
+## Freigaben per Taste (ab 0.9, optional)
+
+Standardmäßig aus. Wer sie möchte, setzt in **Approval by key** das Häkchen und klickt **Enable key approvals**. Danach gilt:
+
+- Die Taste zeigt Werkzeug und gekürzten Inhalt. **Approve** muss eine Sekunde gehalten werden, **Decline** reicht ein Druck.
+- Freigeben lassen sich nur `Read`, `Grep`, `Glob` und `LS`. Befehle, Schreibzugriffe, Netzwerkzugriffe und Unteragenten gehen immer in den normalen Claude-Dialog. Das lässt sich auch per Konfiguration nicht ändern.
+- Jede Entscheidung steht ohne Inhalte in `%USERPROFILE%\.cardeadeck\decisions.jsonl`: Zeit, Sitzung, Werkzeug, Ergebnis.
+
+**Disable key approvals** nimmt nur diesen Hook wieder heraus, **Remove status hooks** nur die Status-Hooks, **Remove all Claude hooks** beide.
+
+## Verwaltete Einstellungen
+
+Für IT-Administration, wenn `~/.claude/settings.json` unverändert bleiben soll oder `allowManagedHooksOnly` gilt. Ausführlich: [MANAGED-SETTINGS.md](MANAGED-SETTINGS.md).
+
+1. Release prüfen: [REPRODUCE.md](REPRODUCE.md).
+2. Den Ordner `hooks` aus dem Release nach `C:\Program Files\Cardea Deck\hooks` kopieren und Node.js 20 oder neuer unter einem festen Pfad bereitstellen.
+3. Die Vorlage [managed-settings.template.json](managed-settings.template.json) oder die Ausgabe von `node managed-settings.mjs` in `C:\Program Files\ClaudeCode\managed-settings.json` übernehmen. Der Freigabe-Hook ist nur mit `--approvals` enthalten.
+4. Das Plugin verteilen. **Set up Claude** wird nicht gebraucht; das Plugin meldet die Verwaltung und schreibt nichts in die Benutzereinstellungen. Bei Verteilung über die Registry oder Server-Einstellungen erkennt es das nicht, siehe Anleitung.
+
+Mit `%ProgramData%\CardeaDeck\policy.json` und `{ "approvalsAllowed": false }` lassen sich Freigaben per Taste zentral abschalten.
 
 ## Update und Entfernen
 
 Ein neues `.streamDeckPlugin` per Doppelklick installieren. Das eigene angepasste Profil behalten; ein zusätzlich angebotenes Standardlayout ist optional. Eine alte Vorgängerinstallation wird gemeldet, statt sie mit einer zweiten Freigaberoute zu mischen. Deren Hooks vor der neuen Einrichtung mit dem bisherigen Uninstaller entfernen.
 
-Vor dem Deinstallieren eine Cardea-Chat-Taste wählen und **Remove Claude hooks** anklicken. Danach Cardea Deck in Stream Deck unter Einstellungen → Plugins deinstallieren. Eigene Einstellungen, Zustände und Sicherungen bleiben lokal.
+Vor dem Deinstallieren eine Cardea-Chat-Taste wählen und **Remove all Claude hooks** anklicken. Danach Cardea Deck in Stream Deck unter Einstellungen → Plugins deinstallieren. Eigene Einstellungen, Zustände und Sicherungen bleiben lokal.
 
-Wenn das Plugin schon entfernt ist, kann **Remove-Claude-Hooks.ps1** aus dem Release ohne Node.js ausgeführt werden, z. B. mit `powershell.exe -NoProfile -File .\Remove-Claude-Hooks.ps1`. Das Hilfsprogramm entfernt ausschließlich genaue Cardea-Node-Hook-Aufrufe und sichert die betroffene Einstellungsdatei. Es führt keine gespeicherten Befehle aus und ersetzt keine aktuellen Einstellungen durch eine alte Komplettsicherung.
+Wenn das Plugin schon entfernt ist, kann **Remove-Claude-Hooks.ps1** aus dem Release ohne Node.js ausgeführt werden, z. B. mit `powershell.exe -NoProfile -File .\Remove-Claude-Hooks.ps1`. Mit `-Group Status` oder `-Group Approval` entfernt es nur eine Gruppe. Das Hilfsprogramm entfernt ausschließlich genaue Cardea-Node-Hook-Aufrufe und sichert die betroffene Einstellungsdatei. Es führt keine gespeicherten Befehle aus und ersetzt keine aktuellen Einstellungen durch eine alte Komplettsicherung.
 
 PowerShell kann heruntergeladene Skripte aufgrund einer Firmen- oder Ausführungsrichtlinie blockieren. Die Datei lässt sich vorab mit `Get-FileHash .\Remove-Claude-Hooks.ps1 -Algorithm SHA256` gegen `SHA256SUMS.txt` prüfen. Wird sie trotzdem blockiert, ausschließlich Cardeas Hook-Einträge und gegebenenfalls Cardeas Statuszeilen-Befehl manuell aus `%USERPROFILE%\.claude\settings.json` oder über die von der IT freigegebene Einstellungsverwaltung entfernen; vorher die Datei sichern und fremde Einträge beibehalten. Claudes [`/hooks`-Menü](https://code.claude.com/docs/en/hooks#the-hooks-menu) zeigt Befehle und Speicherort nur an. Das Plugin und dieses Hilfsprogramm ändern keine Ausführungsrichtlinie; die normale Entfernung vor der Deinstallation läuft direkt in Stream Deck.
 

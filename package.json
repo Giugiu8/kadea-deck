@@ -10,7 +10,8 @@
     "profile": "node profile.mjs",
     "validate": "streamdeck validate dist/de.cardea.deck.sdPlugin",
     "release": "node release.mjs",
-    "verify-release": "node verify-release.mjs"
+    "verify-release": "node verify-release.mjs",
+    "reproduce": "node reproduce.mjs"
   },
   "dependencies": {
     "@elgato/streamdeck": "3.0.4"

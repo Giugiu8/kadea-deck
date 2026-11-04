@@ -41,6 +41,8 @@ Same positions for both providers. Six chats per page. Navigation stays **Claude
 
 No cloud telemetry or account keys required by Cardea Deck. Setup preserves existing Claude hooks and custom status lines; local state stays on its PC. [Privacy and limitations](#privacy-and-limitations).
 
+**Coming in 0.9:** key approvals off by default and limited to low-risk tools, a local decision log, runtime integrity checks and verifiable releases. See [CHANGELOG.md](CHANGELOG.md), [THREAT-MODEL.md](THREAT-MODEL.md) and, for IT administrators, [docs/MANAGED-SETTINGS.md](docs/MANAGED-SETTINGS.md).
+
 **Security notice:** `v0.7.0-beta.1` has a Claude permission-response impersonation flaw. Version 0.8 includes the authenticated receiver and response fix. Update the complete plugin and run **Set up Claude** to refresh its hooks. Keep Cardea's `PermissionRequest` hook disabled on unpatched installations. See [SECURITY.md](SECURITY.md).
 
 ## Quick start
@@ -70,6 +72,8 @@ Navigation on every page: **Claude · Codex · Controls · Apps**.
 
 Six chat keys per provider, with the same positions and renderer. Press a chat to select/open it. Empty chat slots open a blank composer. A white corner marks selection. Choosing/opening alone does not acknowledge a Claude result; **Read** does.
 
+From 0.9, **Approve** needs a one-second hold and key approvals must be enabled first. They cover allowlisted low-risk tools only (`Read`, `Grep`, `Glob`, `LS` by default) and show the tool and shortened content on the key. Commands, file changes and network access stay in Claude's own dialog.
+
 **Approve/Decline** act only on the selected supported pending request, once. Codex uses a fresh owner snapshot and a durable hashed send journal. Ambiguous sends remain locked; continue in the chat instead of deleting the journal. Unsupported or multiple requests stay in the chat. No permanent blanket approval.
 
 **Stop** is on Controls: hold for one second. It checks the selected Codex chat and the same turn marker against a fresh snapshot. The desktop interrupt API does not accept a turn ID, so the final check-to-processing interval cannot be made atomic. The official model selector targets the foreground Codex chat.
@@ -94,7 +98,7 @@ Corporate or PowerShell execution policy may block the downloaded recovery scrip
 
 ## Build and contribute
 
-Windows, Node 22+, ImageMagick `magick`, the Windows .NET C# compiler and Git are needed **only for source builds**:
+Windows, Node 22+, ImageMagick `magick` and Git are needed **only for source builds**:
 
 ```powershell
 npm ci --ignore-scripts
@@ -105,6 +109,8 @@ node release.mjs
 ```
 
 Pinned dependencies, own vector artwork and MIT license. Extracted application logos and manufacturer plugin code are not distributed. The Zod override pins a patched version of the mini API used by Elgato's SDK; SDK integration tests cover that combination. CLI-only audit findings are documented in [SECURITY.md](SECURITY.md).
+
+Official releases come from GitHub Actions; `node release.mjs` is a local dry run. To check a release against the source, see [docs/REPRODUCE.md](docs/REPRODUCE.md).
 
 Read [the comparison and design decisions](docs/COMPARISON.md), [CHANGELOG.md](CHANGELOG.md) and [SECURITY.md](SECURITY.md). Bug reports should include the version, Windows/Stream Deck/app versions and a redacted diagnostic report. Do not attach local state, connection files, account tokens or conversations.
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.0 (in preparation)
+
+**Changed behavior**
+
+- **Set up Claude** now adds status hooks only. The `PermissionRequest` hook needs a separate opt-in with a checkbox. Each group can be removed alone. An approval hook from an earlier version stays inactive and is removed by setup.
+- Approve keys need a one-second hold, also for Codex. A short press shows the alert and answers nothing.
+- Only allowlisted tools (default `Read`, `Grep`, `Glob`, `LS`) wait for a key. Commands, file changes, network access and sub-agents go straight to Claude's own dialog and cannot be added by configuration.
+- Approval keys and the Property Inspector show the tool and a shortened, redacted summary of the request. Requests without displayable content stay in the dialog.
+- `bin/open.exe` is gone: links open through Windows' `explorer.exe`.
+
+**Added**
+
+- `decisions.jsonl`: time, session, tool and outcome only, bounded and rotated.
+- Runtime integrity check against `integrity.json`. On a mismatch, no hooks are served and every key shows a warning.
+- Exact current-user ACLs for `.cardeadeck` and `connection.json`, verified by reading them back. If that fails, no service starts.
+- Release workflow on tags with build attestation, SBOM and an independent rebuild comparison. All actions are pinned by commit SHA. `reproduce.mjs` and [docs/REPRODUCE.md](docs/REPRODUCE.md).
+- Managed settings: generator, template, machine policy and [docs/MANAGED-SETTINGS.md](docs/MANAGED-SETTINGS.md). The plugin does not write user settings when hooks are managed.
+- [THREAT-MODEL.md](THREAT-MODEL.md).
+
 ## 0.8.0 — 2026-11-04
 
 ### Added

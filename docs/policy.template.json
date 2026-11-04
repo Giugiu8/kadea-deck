@@ -1,0 +1,4 @@
+{
+  "approvalsAllowed": false,
+  "allowlist": ["Read", "Grep", "Glob", "LS"]
+}

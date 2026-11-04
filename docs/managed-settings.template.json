@@ -1,0 +1,170 @@
+{
+  "allowManagedHooksOnly": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "SessionStart"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "UserPromptSubmit"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "PreToolUse"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "PostToolUse"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "PostToolUseFailure"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "Notification"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "Stop"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "StopFailure"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "SessionEnd"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "SubagentStart"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "C:\\Program Files\\Cardea Deck\\hooks\\bridge.cjs",
+              "SubagentStop"
+            ],
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}
