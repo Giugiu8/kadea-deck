@@ -6,11 +6,11 @@
 
 Claude and Codex on your Stream Deck — see who is working, who needs you, and who has an answer.
 
-[![Windows beta](https://img.shields.io/badge/Windows-beta_0.7.0-59b5ff?style=flat-square)](https://github.com/Giugiu8/cardea-deck/releases/tag/v0.7.0-beta.1)
+[![Windows beta](https://img.shields.io/badge/Windows-beta_0.8.0-59b5ff?style=flat-square)](https://github.com/Giugiu8/cardea-deck/releases/tag/v0.8.0-beta.1)
 [![Build and tests](https://github.com/Giugiu8/cardea-deck/actions/workflows/check.yml/badge.svg)](https://github.com/Giugiu8/cardea-deck/actions/workflows/check.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-4de398?style=flat-square)](LICENSE)
 
-**[Download Windows beta](https://github.com/Giugiu8/cardea-deck/releases/tag/v0.7.0-beta.1)** · **[German installation guide](docs/INSTALL-DE.md)** · [How it works](#controls)
+**[Download Stream Deck plugin](https://github.com/Giugiu8/cardea-deck/releases/download/v0.8.0-beta.1/Cardea-Deck-0.8.0.streamDeckPlugin)** · **[German installation guide](docs/INSTALL-DE.md)** · [How it works](#controls)
 
 </div>
 
@@ -41,24 +41,18 @@ Same positions for both providers. Six chats per page. Navigation stays **Claude
 
 No cloud telemetry or account keys required by Cardea Deck. Setup preserves existing Claude hooks and custom status lines; local state stays on its PC. [Privacy and limitations](#privacy-and-limitations).
 
-**Security notice:** The published `v0.7.0-beta.1` Windows release has a Claude permission-response impersonation flaw. Keep Cardea's `PermissionRequest` hook disabled on unpatched installations. The fix in this working tree is an unreleased 0.7.1 candidate; update both the plugin and bundled hooks together. See [SECURITY.md](SECURITY.md).
+**Security notice:** `v0.7.0-beta.1` has a Claude permission-response impersonation flaw. Version 0.8 includes the authenticated receiver and response fix. Update the complete plugin and run **Set up Claude** to refresh its hooks. Keep Cardea's `PermissionRequest` hook disabled on unpatched installations. See [SECURITY.md](SECURITY.md).
 
 ## Quick start
 
-1. Download **Cardea-Deck-0.7.0-windows.zip** from [Releases](https://github.com/Giugiu8/cardea-deck/releases), then extract the entire archive to a permanent folder.
-2. Have **Stream Deck 7.1+**, **Node.js 22+**, and your signed-in Claude/Codex desktop apps installed. Install the official Elgato Codex plugin separately for dictation, model selection, new chat and usage. Connect the MK.2 and open Stream Deck once so its device profile exists.
-3. In the extracted folder run:
+1. Have **Stream Deck 7.1+** and your signed-in Claude/Codex desktop apps installed. Connect the 15-key MK.2. Install Elgato's official Codex plugin separately for dictation, model selection and usage.
+2. Download **Cardea-Deck-0.8.0.streamDeckPlugin** and double-click it. Stream Deck installs the plugin and offers the bundled four-page profile. Keep your existing Cardea profile if you have customized it; a second layout is optional.
+3. Select any Cardea **chat key** in the Stream Deck editor. In **Local connections**, click **Set up Claude** and **Connect Codex**. Setup backs up the settings it changes and preserves foreign hooks and custom status lines. A repair notice after a Stream Deck update is resolved by clicking **Set up Claude** again.
+4. Start a new Claude chat to load its hooks. Codex must be open for its live status source. On **Apps**, assign the five **Choose app** keys to your own programs.
 
-   ```powershell
-   node setup.mjs --check
-   node setup.mjs
-   ```
+The plugin uses Stream Deck's bundled Node runtime. No separate Node.js installation, terminal, npm, source checkout or folder of loose images is needed on the destination PC. Setup is available from chat/action settings, never from an approval key. Custom Claude config directories and linked development installations require manual configuration.
 
-   Or double-click `Install.cmd`. Setup restarts **Stream Deck only**, adds its own profile, and preserves unrelated Claude hooks and custom status lines. No admin rights, API key, npm, ImageMagick or source build required for the download.
-4. Select **Cardea Deck** in Stream Deck. Start a new Claude chat to load its hooks. On **Apps**, change the generic bookmarks and assign the five **Choose app** keys to your local programs.
-5. Run `Doctor.ps1` or `node doctor.mjs` for a report without chat titles, IDs, tokens or credentials.
-
-The currently supported installer expects the standard Windows Stream Deck location. If multiple MK.2 devices are configured, use `node setup.mjs --device-id "<local device ID>"`. A source-linked development install is deliberately preserved and refused as an automatic upgrade target.
+The advanced portable ZIP remains available for scripted installation and older managed migrations. It needs Node.js 22+: extract it, run `node setup.mjs --check`, then `node setup.mjs`. It is optional; do not copy the repository or `node_modules` to install the plugin. Its Doctor report omits chat titles, IDs and keys.
 
 ## Controls
 
@@ -85,16 +79,16 @@ Claude usage is shown only when real `rate_limits` arrive through our status lin
 ## Privacy and limitations
 
 - Local metadata only. Claude hooks drop prompts, tool arguments, outputs and transcript paths. The Codex desktop pipe sends full state frames; our bounded streaming parser discards history/tool arguments while reading and retains only selected metadata. No transcript logging or cloud telemetry.
-- Metadata, the random per-start loopback connection token and the separate receiver identity key live under `%USERPROFILE%/.cardeadeck`. This directory stays on its PC. In the 0.7.1 candidate, hooks authenticate the receiver before sending metadata and verify each permission response. Other applications under the same Windows user are inside the local trust boundary.
+- Metadata, the random per-start loopback connection token and the separate receiver identity key live under `%USERPROFILE%/.cardeadeck`. This directory stays on its PC. Hooks authenticate the receiver before sending metadata and verify each permission response. Other applications under the same Windows user are inside the local trust boundary.
 - The Codex desktop pipe is not a publicly stable API. Observed stream version: 11; unknown newer versions fail closed. Desktop updates can require maintenance or rerunning Setup to refresh the bundled executable path.
 - Hook collection is not proof of every open Claude chat. Desktop deep links can change. No Gemini, macOS/Linux support, remote PC control or full Micro/VibeDeck feature parity is promised.
-- The private predecessor was tested on a real MK.2, including chat switching, Claude new chat and Codex dictation. The original PC now runs 0.7.0 with a healthy collector after migration. The portable installer is tested in isolated fresh-profile fixtures; a second physical PC remains an independent installation test. Real approval/stop hardware coverage is limited. See [release validation](docs/VALIDATION.md).
+- The private predecessor was tested on a real MK.2, including chat switching, Claude new chat and Codex dictation. The original PC has exercised the 0.8 setup view and four-page profile import, and reports an authenticated receiver and connected Codex source. The portable installer is tested in isolated fresh-profile fixtures; a second physical PC remains an independent installation test. Real approval/stop hardware coverage is limited. See [release validation](docs/VALIDATION.md).
 
 ## Update, remove, recover
 
-Extract the next release and run Setup again. Your existing Apps/profile edits are preserved. Setup checks download hashes, backs up affected files, checks concurrent Claude-setting changes and rolls back a failed install. Backup copies and location records stay under `.cardeadeck/backups`; retired directories remain beside their original paths with a `.cardea-backup-*` suffix so redirected AppData works across volumes. These are recovery copies, not active plugins/profiles.
+Double-click the next `.streamDeckPlugin` to update. Keep your customized profile when Stream Deck offers an optional layout. **Set up Claude** refreshes only our hook paths; settings backups stay private under `.cardeadeck/backups`. A legacy predecessor is reported instead of silently installing a second approval hook.
 
-Run `node setup.mjs --uninstall` or `Uninstall.cmd` to remove only our hooks and archive our plugin/profile. Other settings, your local state and backups are retained. Do not restore an old entire Claude settings file over newer user changes. For an older plugin version, install its release archive after uninstalling; local state formats remain at schema 1 in this release.
+Before uninstalling, select a Cardea chat key and click **Remove Claude hooks**, then uninstall the plugin in Stream Deck. If you already removed it, the release's standalone **Remove-Claude-Hooks.ps1** removes only exact Cardea Node hook commands, without requiring Node.js or restoring an old whole settings file. Other settings, local state and backups are retained. For an old managed ZIP installation, `Uninstall.cmd` remains available in its download.
 
 ## Build and contribute
 
@@ -104,7 +98,6 @@ Windows, Node 22+, ImageMagick `magick`, the Windows .NET C# compiler and Git ar
 npm ci --ignore-scripts
 node build.mjs
 node --test tests/*.test.mjs
-node profile.mjs
 node node_modules/@elgato/cli/bin/streamdeck.mjs validate dist/de.cardea.deck.sdPlugin
 node release.mjs
 ```

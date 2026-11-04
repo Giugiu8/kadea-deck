@@ -1,11 +1,13 @@
 // Fresh profile template: no source profile, device serial, app paths or chat data.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
+import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {renderCardPng} from './render-png.mjs';
 export const profileId='83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile';
-export function profileTemplate({version='0.7.0',uuid=randomUUID}={}){
+export function profileTemplate({version='0.8.0',uuid=randomUUID}={}){
  const ids=Array.from({length:4},()=>uuid().toUpperCase()),defaultId=uuid().toUpperCase();
  const names=['Claude','Codex','Controls','Apps'];
  const own=(kind,settings={})=>action(`de.cardea.deck.${kind}`,'de.cardea.deck','Cardea Deck',settings,version+'.0');
@@ -26,13 +28,13 @@ export function profileTemplate({version='0.7.0',uuid=randomUUID}={}){
  // Empty Open actions are intentionally configured in Stream Deck on each PC.
  for(let col=0;col<5;col++)a[3][`${col},1`]=core('system.open',{path:''});
  for(let p=0;p<4;p++){for(let col=0;col<4;col++)a[p][`${col},2`]=core('profile.rotate',{PageIndex:col+1});a[p]['4,2']=p===0?own('quota'):native('usage');}
- return{manifest:{AppIdentifier:'*',Device:{Model:'20GBA9901',UUID:''},Name:'Cardea Deck',Pages:{Current:ids[0],Default:defaultId,Pages:ids},Version:'3.0'},ids,pages,links};
+ return{manifest:{AppIdentifier:null,Device:{Model:'20GBA9901',UUID:''},Name:'Cardea Deck',Pages:{Current:ids[0],Default:defaultId,Pages:ids},Version:'3.0'},ids,pages,links};
 }
-export function writeProfile(destination,version){
+function renderProfile(destination,version,render){
  const profile=profileTemplate({version});fs.mkdirSync(destination,{recursive:true});
  for(let p=0;p<4;p++){
   const directory=path.join(destination,'Profiles',profile.ids[p]);fs.mkdirSync(path.join(directory,'Images'),{recursive:true});const actions=profile.pages[p].Controllers[0].Actions;
-  const image=(pos,card,name)=>{renderCardPng(card,path.join(directory,'Images',name+'.png'));actions[pos].States=[{Image:'Images/'+name+'.png',ShowTitle:false}];};
+  const image=(pos,card,name)=>{render(card,path.join(directory,'Images',name+'.png'));actions[pos].States=[{Image:'Images/'+name+'.png',ShowTitle:false}];};
   for(let col=0;col<4;col++)image(`${col},2`,{kind:'nav',title:['Claude','Codex','Controls','Apps'][col],icon:['chats','model','controls','apps'][col],brand:['claude','codex'][col],active:p===col},'nav-'+col);
   if(p===0)image('3,1',{kind:'action',title:'New chat',icon:'chatplus'},'new');
   if(p===2)image('4,1',{kind:'action',title:'New chat',icon:'chatplus',caption:'CLAUDE'},'new');
@@ -41,6 +43,40 @@ export function writeProfile(destination,version){
  }
  const pinned=path.join(destination,'Profiles',profile.manifest.Pages.Default);fs.mkdirSync(pinned,{recursive:true});fs.writeFileSync(path.join(pinned,'manifest.json'),JSON.stringify({Name:'Default',Icon:'',Controllers:[{Type:'Keypad',Actions:{}}]}));
  fs.writeFileSync(path.join(destination,'manifest.json'),JSON.stringify(profile.manifest));return profile;
+}
+export function writeProfile(destination,version,{render=renderCardPng}={}){
+ destination=path.resolve(destination);const parent=path.dirname(destination);
+ if(path.basename(parent)!=='profile-template'||path.basename(destination)!==profileId)throw Error('Expected own generated profile-template output');
+ fs.mkdirSync(parent,{recursive:true});
+ for(let current=parent;;current=path.dirname(current)){if(fs.lstatSync(current).isSymbolicLink())throw Error('Linked generated profile path');if(path.dirname(current)===current)break;}
+ if(fs.existsSync(destination)){
+  if(fs.lstatSync(destination).isSymbolicLink())throw Error('Linked generated profile path');
+  const old=JSON.parse(fs.readFileSync(path.join(destination,'manifest.json'),'utf8'));
+  if(old.Name!=='Cardea Deck'||old.Device?.Model!=='20GBA9901'||old.Version!=='3.0')throw Error('Refuse to replace an unrecognized profile');
+ }
+ const staging=fs.mkdtempSync(path.join(parent,'.cardea-profile-')),retired=path.join(parent,'.cardea-profile-retired-'+randomUUID());let moved=false,installed=false;
+ const remove=file=>{
+  if(path.dirname(file)!==parent||!path.basename(file).startsWith('.cardea-profile-')||fs.lstatSync(file).isSymbolicLink()||path.dirname(fs.realpathSync(file)).toLowerCase()!==fs.realpathSync(parent).toLowerCase())throw Error('Unexpected generated profile cleanup path');
+  fs.rmSync(file,{recursive:true,force:true});
+ };
+ try{
+  const profile=renderProfile(staging,version,render);
+  if(fs.existsSync(destination)){fs.renameSync(destination,retired);moved=true;}
+  fs.renameSync(staging,destination);installed=true;
+  return profile;
+ }catch(error){if(moved&&!installed)fs.renameSync(retired,destination);throw error;}
+ finally{if(fs.existsSync(staging))remove(staging);if(installed&&moved&&fs.existsSync(retired))remove(retired);}
+}
+export function packProfile(profileDirectory,destination){
+ const scratch=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-profile-pack-')),temporary=destination+'.'+randomUUID()+'.tmp';
+ try{
+  fs.cpSync(profileDirectory,path.join(scratch,profileId),{recursive:true});fs.mkdirSync(path.dirname(destination),{recursive:true});
+  execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command','Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::CreateFromDirectory($env:CARDEA_PROFILE_SOURCE,$env:CARDEA_PROFILE_DEST,[IO.Compression.CompressionLevel]::Optimal,$false)'],{windowsHide:true,env:{...process.env,CARDEA_PROFILE_SOURCE:scratch,CARDEA_PROFILE_DEST:temporary}});
+  fs.renameSync(temporary,destination);
+ }finally{
+  if(fs.existsSync(temporary))fs.unlinkSync(temporary);
+  if(path.dirname(scratch)!==os.tmpdir()||!path.basename(scratch).startsWith('cardea-profile-pack-'))throw Error('Unexpected profile pack path');fs.rmSync(scratch,{recursive:true,force:true});
+ }
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const root=path.dirname(fileURLToPath(import.meta.url)),{version}=JSON.parse(fs.readFileSync(path.join(root,'package.json')));

@@ -10,26 +10,34 @@ export function openUrl(helper,url){
   return new Promise(resolve=>execFile(helper,[url],{windowsHide:false,timeout:10_000},error=>resolve(!error)));
   // The caller reports a request, never treats ShellExecute success as a read receipt.
 }
-export async function refreshDesktopMetadata(store,root){
-  const wanted=new Set(store.list({includeEnded:true,includeArchived:true}).map(s=>s.id));if(!wanted.size)return;
+const metadataCaches=new WeakMap();
+export async function refreshDesktopMetadata(store,root,{io=fs}={}){
+  const wanted=new Set(store.list({includeEnded:true,includeArchived:true}).filter(s=>!s.ended||s.unread||s.requestId).map(s=>s.id));if(!wanted.size)return;
+  let roots=metadataCaches.get(store);if(!roots){roots=new Map();metadataCaches.set(store,roots);}let cache=roots.get(root);if(!cache){cache=new Map();roots.set(root,cache);}const present=new Set();
   let examined=0;
   async function visit(dir,depth){
     if(depth>3||examined>=6000||!wanted.size)return;
-    let entries;try{entries=await fs.readdir(dir,{withFileTypes:true});}catch{return;}
+    let entries;try{entries=await io.readdir(dir,{withFileTypes:true});}catch{return;}
     for(const entry of entries){
       if(examined>=6000||!wanted.size)return;
       const p=path.join(dir,entry.name);
       if(entry.isDirectory())await visit(p,depth+1);
       else if(entry.isFile()&&entry.name.startsWith('local_')&&entry.name.endsWith('.json')){
-        examined++;try{
-          const info=await fs.stat(p);if(info.size>512_000)continue;
-          const meta=JSON.parse(await fs.readFile(p,'utf8'));
-          if(wanted.has(meta.cliSessionId)&&/^[a-zA-Z0-9_-]{1,180}$/.test(meta.sessionId??'')){
+        examined++;present.add(p);try{
+          const info=await io.stat(p);if(info.size>512_000){cache.delete(p);continue;}
+          let saved=cache.get(p);
+          if(!saved||saved.mtime!==info.mtimeMs||saved.size!==info.size){
+            let meta=null;try{const raw=JSON.parse(await io.readFile(p,'utf8'));if(typeof raw.cliSessionId==='string'&&/^[a-zA-Z0-9_-]{1,160}$/.test(raw.cliSessionId)&&typeof raw.sessionId==='string'&&/^[a-zA-Z0-9_-]{1,180}$/.test(raw.sessionId))meta={cliSessionId:raw.cliSessionId,sessionId:raw.sessionId,title:typeof raw.title==='string'?raw.title.slice(0,120):'',isArchived:raw.isArchived===true};}catch{}
+            saved={mtime:info.mtimeMs,size:info.size,meta};if(cache.size>=6000)cache.delete(cache.keys().next().value);cache.set(p,saved);
+          }
+          const meta=saved.meta;
+          if(meta&&wanted.has(meta.cliSessionId)&&/^[a-zA-Z0-9_-]{1,180}$/.test(meta.sessionId??'')){
             store.annotate(meta.cliSessionId,{desktopId:meta.sessionId,title:typeof meta.title==='string'?meta.title:'',archived:meta.isArchived===true});wanted.delete(meta.cliSessionId);
           }
-        }catch{/* Only metadata fields are used; no conversations are imported. */}
+        }catch{cache.delete(p);/* Only metadata fields are used; no conversations are imported. */}
       }
     }
   }
   await visit(root,0);
+  for(const file of cache.keys())if(!present.has(file))cache.delete(file);
 }

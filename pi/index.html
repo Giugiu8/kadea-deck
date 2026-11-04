@@ -1,13 +1,12 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><title>Cardea Deck</title>
-<style>body{font:13px system-ui;background:#2d2d2d;color:#ddd;margin:14px}label{display:block;margin:12px 0}input,select{display:block;width:96%;margin-top:5px}small{color:#aaa}p{line-height:1.5}</style>
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src ws://127.0.0.1:*"><title>Cardea Deck</title>
+<link rel="stylesheet" href="style.css">
 <strong>Cardea Deck · __VERSION__</strong>
+<section id="connections"><h2>Local connections</h2><p id="status" role="status" aria-live="polite">Connecting to Stream Deck…</p>
+<div id="setup-buttons"><button id="setupClaude" disabled>Set up Claude</button><button id="connectCodex" disabled>Connect Codex</button><button id="removeClaude" class="secondary" disabled>Remove Claude hooks</button></div>
+<small id="setup-help">Settings are backed up. Existing hooks and custom status lines are preserved. Start a new Claude chat after setup.</small></section>
 <label id="slot-field">Chat slot (1–6)<input id="slot" type="number" min="1" max="6" value="1"></label>
 <label id="decision-field">Decision<select id="decision"><option value="allow">Approve once</option><option value="deny">Decline once</option></select></label>
 <label id="window-field">Usage window<select id="window"><option value="seven_day">Week</option><option value="five_hour">5 hours</option></select></label>
 <p>Blue: WORKING · Yellow: INPUT · Green: NEW · Red: reported error · Gray: READY or UNKNOWN.</p>
-<small>Approval requires a matching pending request. Stop: hold for 1 second. Diagnostics: run Doctor.ps1 from the download.</small>
-<script>
-let socket,context,settings={};const $=id=>document.getElementById(id);
-window.connectElgatoStreamDeckSocket=(port,uuid,event,info,actionInfo)=>{const action=JSON.parse(actionInfo);context=action.context;settings=action.payload?.settings??{};socket=new WebSocket('ws://127.0.0.1:'+port);socket.onopen=()=>socket.send(JSON.stringify({event,uuid}));const kind=action.action.split('.').at(-1);$('slot-field').hidden=!['session','codex-session'].includes(kind);$('decision-field').hidden=!kind.includes('permission');$('window-field').hidden=kind!=='quota';$('slot').value=(Number(settings.slot)||0)+1;$('decision').value=settings.decision==='deny'?'deny':'allow';$('window').value=settings.window==='five_hour'?'five_hour':'seven_day';socket.onmessage=e=>{const m=JSON.parse(e.data);if(m.event==='didReceiveSettings')settings=m.payload.settings??settings;};};
-for(const id of ['slot','decision','window'])$(id).onchange=()=>{if(!socket||socket.readyState!==1)return;settings={...settings,[id]:id==='slot'?Math.max(0,Math.min(5,Number($(id).value)-1)):$(id).value};socket.send(JSON.stringify({event:'setSettings',context,payload:settings}));};
-</script></html>
+<small>Approval requires a matching pending request. Stop: hold for 1 second. Remove Claude hooks here before uninstalling the plugin.</small>
+<script src="index.js"></script></html>

@@ -1,6 +1,6 @@
 {
   "name": "cardea-deck",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "description": "Unified local Claude and Codex controls for Stream Deck on Windows",
@@ -9,7 +9,8 @@
     "test": "node --test tests/*.test.mjs",
     "profile": "node profile.mjs",
     "validate": "streamdeck validate dist/de.cardea.deck.sdPlugin",
-    "release": "node release.mjs"
+    "release": "node release.mjs",
+    "verify-release": "node verify-release.mjs"
   },
   "dependencies": {
     "@elgato/streamdeck": "3.0.4"

@@ -8,6 +8,9 @@ import {cardSvg} from './cards.mjs';
 import {refreshDesktopMetadata,openUrl,USAGE,NEW_CHAT} from './desktop.mjs';
 import runtime from '../hooks/runtime.cjs';
 import {CodexStore} from './codex-store.mjs';
+import {createIntegrations} from './integrations.mjs';
+import {registerIntegrationUi} from './integration-ui.mjs';
+import {discoverCodex} from './windows-apps.mjs';
 const directory=runtime.runtimeDirectory();
 // Migrate state only from the native plugin's own view. Never reuse an old
 // connection/token, or overwrite a shared file created by a newer receiver.
@@ -19,8 +22,9 @@ for(const name of ['state.json','statusline.json']){
 const store=new DeckStore({file:path.join(directory,'state.json')});
 const contexts=new Map(),down=new Map(),images=new Map(),bindings=new Map(),pendingImages=new Map();let imageSequence=0;
 const inputDiagnostics={keyDownCount:0,keyUpCount:0,lastAction:null,lastResult:null};
-let codex=null;
-try{const config=JSON.parse(fs.readFileSync(path.join(directory,'codex-client.json'),'utf8').replace(/^\uFEFF/,''));const executable=String(config.executable??'');if(config.enabled===true&&/^[A-Z]:[\\/]Program Files[\\/]WindowsApps[\\/]OpenAI\.Codex_[^\\/]+[\\/]app[\\/]resources[\\/]codex\.exe$/i.test(executable)&&fs.existsSync(executable))codex=new CodexStore({executable,ledgerFile:path.join(directory,'codex-attempts.json')});}catch{}
+let codex=null,codexExecutable='',connectingCodex=false;
+const pluginDirectory=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const integrations=createIntegrations({home:process.env.USERPROFILE,appData:process.env.APPDATA,plugin:pluginDirectory});
 const receiver=await startReceiver(store,{directory,getDiagnostics:()=>({visibleKeys:contexts.size,renderedKeys:images.size,...inputDiagnostics,codex:{configured:!!codex,connected:codex?.connected===true,known:codex?.list().length??0,live:codex?.list().filter(t=>t.state!=='unknown').length??0}})});
 const helper=path.join(path.dirname(fileURLToPath(import.meta.url)),'open.exe');
 const metadataRoots=()=>{const base=path.join(process.env.LOCALAPPDATA,'Claude-Data');try{return fs.readdirSync(base,{withFileTypes:true}).filter(e=>e.isDirectory()&&e.name.startsWith('claude')).map(e=>path.join(base,e.name,'claude-code-sessions'));}catch{return[];}};
@@ -89,7 +93,19 @@ class CardeaAction extends SingletonAction {
   }
 }
 for(const kind of ['session','summary','target','permission','ack','quota','open','codex-session','codex-permission','codex-stop'])streamDeck.actions.registerAction(new CardeaAction(kind));
-codex?.on('change',paint);codex?.start();
+async function connectCodex(stillCurrent=()=>true,persist=true){
+ if(connectingCodex)return false;connectingCodex=true;
+ try{
+  const executable=await discoverCodex();if(!executable||!stillCurrent())return false;
+  if(persist)integrations.saveCodex(executable);
+  if(codex&&codexExecutable===executable)return true;
+  codex?.close();codexExecutable=executable;codex=new CodexStore({executable,ledgerFile:path.join(directory,'codex-attempts.json')});codex.on('change',()=>{paint();integrationUi.refresh();});codex.start();paint();return true;
+ }finally{connectingCodex=false;}
+}
+const integrationUi=registerIntegrationUi({ui:streamDeck.ui,manager:integrations,connectCodex,diagnostics:()=>({sourceHasEvents:store.connected,codexConfigured:integrations.codexEnabled(),codexConnected:codex?.connected===true})});
+store.on('change',()=>integrationUi.refresh());
+if(integrations.codexEnabled())void connectCodex(()=>true,false).catch(()=>{});
+setInterval(()=>{if(codexExecutable&&!fs.existsSync(codexExecutable))void connectCodex(()=>true,false).catch(()=>{});},60_000).unref();
 store.on('change',paint);setInterval(paint,1000).unref();
 let scanning=false,lastScan=0;async function refresh(){if(scanning||Date.now()-lastScan<5000)return;scanning=true;lastScan=Date.now();try{for(const root of metadataRoots())await refreshDesktopMetadata(store,root);}finally{scanning=false;}}
 setInterval(refresh,30_000).unref();store.on('change',()=>{if(!scanning)void refresh();});

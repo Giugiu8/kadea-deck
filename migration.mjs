@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {hookOwner} from './claude-hooks.mjs';
 
 const legacyPluginId='de.cardea.kadeadeck';
 const legacyPluginFolder=legacyPluginId+'.sdPlugin';
@@ -45,7 +46,7 @@ export function inspectLegacy({home,appData,newRuntime,newReceipt,newPlugin,prof
  return{pluginId:legacyPluginId,plugin:oldPlugin,runtime:oldRuntime,receipt:oldReceipt,profile:expectedProfile};
 }
 
-const legacyCommand=command=>typeof command==='string'&&command.replaceAll('\\','/').toLowerCase().includes('/'+legacyPluginFolder.toLowerCase()+'/hooks/');
+const legacyCommand=command=>hookOwner(command)==='legacy';
 export function removeLegacyHooks(input){
  const settings=structuredClone(input);
  if(settings.hooks!=null&&(typeof settings.hooks!=='object'||Array.isArray(settings.hooks)))throw Error('Invalid hooks settings');

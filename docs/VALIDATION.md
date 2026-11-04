@@ -1,5 +1,17 @@
 # Validation scope
 
+## 0.8 plugin installation
+
+Version 0.8 packages the editable four-page MK.2 layout inside the normal `.streamDeckPlugin` and uses Stream Deck's Node runtime for local hook setup. The artifact verifier checks the exact public plugin allowlist, built-hook hashes, a small file/image budget and absence of local state/logs. Profile-generation tests reproduce repeated-build accumulation and verify that a failed render retains the previous complete build.
+
+The native Property Inspector was opened in Stream Deck 7.6.0 on the original PC, and the generated profile was imported there with all four pages while the pre-existing Cardea profile remained present. That import exposed an unwanted default-profile flag; the generated profile now uses the null app assignment observed after clearing it in Stream Deck. The native SDK fixture exercises setup and removal through a selected inspector, preserving foreign settings, then tests the built hook's exact approval roundtrip. Separate tests reject stale inspector tokens, extra payload paths, approval-card setup and concurrent settings edits. These fixtures never approve a real Claude action.
+
+Codex discovery was checked with Stream Deck's actual Node 20.20.2. Its native Windows canonical-path API is used because the JavaScript realpath walk returns EPERM inside WindowsApps on that runtime. After a complete host restart the original PC reports an authenticated receiver and connected Codex source. The new metadata cache is checked for one read of unchanged files and refresh after archive/title changes. This is not a measurement of the separate work PC's general responsiveness.
+
+The standalone recovery helper is tested without a separate Node invocation. A second physical PC, a full physical approval/Stop pass and every Windows/Stream Deck update path remain outside the demonstrated scope.
+
+## 0.7.1 security fix (included in 0.8)
+
 The unreleased 0.7.1 candidate adds an actual receiver-subprocess crash and abandoned-port takeover fixture, response-authentication/replay/tampering tests against source and built hooks, per-start key rotation and legacy-key refusal. Identity tests cover metadata withholding, socket replacement after a valid identity proof, a trickling peer and a missing packaged helper. The SDK fixture sends a real built hook through the bundled receiver and an exact simulated Stream Deck key press. These tests never approve a real Claude action. Cross-Windows-account exploitation and a physical approval-button pass remain separate outstanding checks.
 
 On 2026-11-04 the candidate passed 119 tests under the source-build Node.js runtime and all 119 under Stream Deck's bundled Node.js 20.20.2. Claude Opus 5.5 at high effort reviewed two iterations through the CLI, independently ran the then-current 118-test suite, and found no remaining blocking security issue in the second iteration. A subsequent Doctor regression brings the local total to 119. The ZIP passes isolated fresh install, upgrade and uninstall plus the official Elgato validator. These checks do not establish performance on a separate work PC.

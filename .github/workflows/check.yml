@@ -22,8 +22,6 @@ jobs:
             $location = (Get-ChildItem 'C:/Program Files/ImageMagick-*' -Directory | Select-Object -First 1).FullName
             $location | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           }
-      - run: node build.mjs
-      - run: node --test tests/*.test.mjs
-      - run: node profile.mjs
-      - run: node node_modules/@elgato/cli/bin/streamdeck.mjs validate dist/de.cardea.deck.sdPlugin
+      - name: Build, test, validate and verify installable artifacts
+        run: node release.mjs
       - run: npm audit --omit=dev --audit-level=high

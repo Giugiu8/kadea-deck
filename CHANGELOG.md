@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.0 — 2026-11-04
+
+### Added
+- Install the complete plugin with one `.streamDeckPlugin`: bundled editable four-page MK.2 profile and local setup in Stream Deck's Property Inspector. The normal installation uses Stream Deck's Node runtime; no source folder, npm or separate Node installation is required.
+- Explicit Claude setup/removal and Codex connection buttons, settings backups, concurrent-change checks, a bounded native setup protocol and a standalone hook-removal recovery script.
+- Codex discovery verifies the official Microsoft Store package and its canonical installation location, including secondary drives and Stream Deck's Node 20 runtime.
+
+### Fixed
+- Rebuild generated profiles in isolation and replace obsolete pages. Repeated builds no longer accumulate unused pages and hundreds of images.
+- Keep the existing default profile when importing the bundled layout; customized existing layouts can be retained.
+- Match only exact owned Node hook commands, preserving foreign wrappers that mention Cardea paths.
+- Cache bounded metadata for unchanged files; archive/unarchive updates still refresh.
+
+### Security
+- Includes the authenticated receiver and request-bound permission-response fix developed in 0.7.1. Updating both plugin and hooks closes the confirmed impersonation flaw in `v0.7.0-beta.1`.
+- Setup is available only through the selected native Property Inspector, with a fresh per-inspector token and single-flight operations. It is never an HTTP endpoint or a hardware approval action.
+
 ## 0.7.1 — Unreleased
 
 ### Security
