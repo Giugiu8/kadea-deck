@@ -4,10 +4,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-const MANIFEST='integrity.json';
+import {pluginFiles,integrityFile} from '../plugin-files.mjs';
+const MANIFEST=integrityFile;
+const EXPECTED=pluginFiles.filter(name=>name!==integrityFile);
+// Folders whose content can execute. Stream Deck may leave the old helper behind on update; nothing runs it.
+const CODE_FOLDERS=['bin','hooks','pi'],LEGACY=new Set(['bin/open.exe']);
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 // Returns null when every listed file matches, otherwise a short reason without file contents.
-export function verifyPluginFiles(directory,{required=['bin/plugin.mjs','hooks/bridge.cjs','manifest.json']}={}){
+export function verifyPluginFiles(directory,{required=EXPECTED}={}){
  let manifest;
  try{manifest=JSON.parse(fs.readFileSync(path.join(directory,MANIFEST),'utf8'));}catch{return{reason:'manifest_unreadable'};}
  if(manifest?.schema!==1||!manifest.files||typeof manifest.files!=='object'||Array.isArray(manifest.files))return{reason:'manifest_invalid'};
@@ -18,6 +22,14 @@ export function verifyPluginFiles(directory,{required=['bin/plugin.mjs','hooks/b
   if(!file.startsWith(root+path.sep)||typeof expected!=='string'||!/^[a-f0-9]{64}$/.test(expected))return{reason:'manifest_invalid',file:name};
   let actual;try{actual=sha256(fs.readFileSync(file));}catch{return{reason:'file_missing',file:name};}
   if(actual!==expected)return{reason:'file_changed',file:name};
+ }
+ for(const folder of CODE_FOLDERS){
+  let names;try{names=fs.readdirSync(path.join(root,folder),{recursive:true,withFileTypes:true});}catch{continue;}
+  for(const entry of names){
+   const name=path.relative(root,path.join(entry.parentPath??entry.path,entry.name)).replaceAll('\\','/');
+   if(entry.isDirectory()||Object.hasOwn(manifest.files,name)||LEGACY.has(name))continue;
+   return{reason:'unexpected_file',file:name};
+  }
  }
  return null;
 }

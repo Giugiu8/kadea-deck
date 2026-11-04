@@ -37,7 +37,7 @@ If the managed files name Cardea's bridge or set `allowManagedHooksOnly`, the pl
 
 ## Limiting key approvals centrally
 
-Optional `%ProgramData%\CardeaDeck\policy.json`, writable only by administrators. A template is in [policy.template.json](policy.template.json). It can only narrow what a user chose:
+Optional `%ProgramData%\CardeaDeck\policy.json`. A template is in [policy.template.json](policy.template.json). Standard users can create folders under `ProgramData` by default, so create this folder yourself and allow only administrators to change it. The file can only narrow what a user chose:
 
 ```json
 { "approvalsAllowed": false }

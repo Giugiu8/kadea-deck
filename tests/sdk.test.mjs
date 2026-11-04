@@ -80,14 +80,14 @@ test('built plugin registers with the real SDK and renders live receiver events 
    return ended.then(([code])=>{assert.equal(code,0,errors);assert.equal(errors,'');return output?JSON.parse(output):{};});
   };
   socket.send(JSON.stringify({event:'willAppear',action:'de.cardea.deck.permission',context:'approve-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:1,row:0},isInMultiAction:false,settings:{decision:'allow'},state:0}}));
-  const first=permission('Read',{file_path:'C:\\a\\first.txt'});
-  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('first.txt')));
+  const first=permission('Read',{file_path:'C:\\a\\one.txt'});
+  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('one.txt')));
   const key=event=>socket.send(JSON.stringify({event,action:'de.cardea.deck.permission',context:'approve-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:1,row:0},isInMultiAction:false,settings:{decision:'allow'},state:0}}));
   key('keyDown');await new Promise(r=>setTimeout(r,15));
   await post('/event','UserPromptSubmit');assert.deepEqual(await first,{});
-  const next=permission('Read',{file_path:'C:\\a\\second.txt'});
-  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('second.txt')));
-  assert.ok(messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('HOLD 1 S')));
+  const next=permission('Read',{file_path:'C:\\a\\two.txt'});
+  await waitFor(()=>messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('two.txt')));
+  assert.ok(messages.some(m=>m.event==='setImage'&&m.context==='approve-key'&&decodeURIComponent(m.payload.image).includes('Hold: Approve')));
   key('keyUp');await waitFor(()=>messages.some(m=>m.event==='showAlert'&&m.context==='approve-key'));
   assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,1);
   // One quick press must not allow anything; holding for a second does.
@@ -100,7 +100,7 @@ test('built plugin registers with the real SDK and renders live receiver events 
   assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,0);
   const decisions=fs.readFileSync(path.join(dir,'.cardeadeck/decisions.jsonl'),'utf8');
   assert.deepEqual(decisions.trim().split('\n').map(line=>{const e=JSON.parse(line);return[e.tool,e.decision];}),[['Read','cancelled'],['Read','allow'],['Bash','deferred']]);
-  assert.ok(!decisions.includes('second.txt')&&!decisions.includes('PRIVATE_SENTINEL'));
+  assert.ok(!decisions.includes('two.txt')&&!decisions.includes('PRIVATE_SENTINEL'));
   // Without a configured Codex source, its permission key must fail closed;
   // an empty chat key may still open only the fixed new-composer route.
   const codexKey=(kind,context,event,settings={})=>socket.send(JSON.stringify({event,action:`de.cardea.deck.codex-${kind}`,context,device:'test-device',payload:{controller:'Keypad',coordinates:{column:0,row:1},isInMultiAction:false,settings,state:0}}));

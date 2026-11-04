@@ -14,6 +14,7 @@ const {build}=require('esbuild');
 const flag=name=>{const i=process.argv.indexOf(name);return i<0?null:process.argv[i+1];};
 const codeOnly=process.argv.includes('--code-only');
 const out=flag('--out')?path.resolve(flag('--out')):path.join(root,'dist/de.cardea.deck.sdPlugin');
+for(const name of ['bin','hooks','pi'])fs.rmSync(path.join(out,name),{recursive:true,force:true});
 fs.mkdirSync(path.join(out,'bin'),{recursive:true});fs.mkdirSync(path.join(out,'imgs'),{recursive:true});fs.mkdirSync(path.join(out,'hooks'),{recursive:true});
 // Stream Deck's bundled Node can fail to create this through a cross-drive
 // development junction. Create it through the real build path before launch.

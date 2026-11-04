@@ -8,9 +8,6 @@ import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 const tool=name=>path.join(process.env.SystemRoot||'C:\\Windows','System32',name);
 const run=(name,args)=>execFileSync(tool(name),args,{encoding:'utf8',windowsHide:true,timeout:20_000,stdio:['ignore','pipe','pipe']});
-// SDDL shortens well-known accounts; icacls takes only the numeric form.
-const ALIASES={WD:'S-1-1-0',AN:'S-1-5-7',AU:'S-1-5-11',SY:'S-1-5-18',LS:'S-1-5-19',NS:'S-1-5-20',BA:'S-1-5-32-544',BU:'S-1-5-32-545',BG:'S-1-5-32-546',PU:'S-1-5-32-547',RD:'S-1-5-32-555',IU:'S-1-5-4',SU:'S-1-5-6',NU:'S-1-5-2',CO:'S-1-3-0',CG:'S-1-3-1',AC:'S-1-15-2-1',OW:'S-1-3-4'};
-const canonical=sid=>{if(/^S-1-[0-9-]+$/.test(sid))return sid;const known=ALIASES[sid];if(!known)throw Error('acl_failed');return known;};
 let cachedSid=null;
 export function currentUserSid(){
  if(cachedSid)return cachedSid;
@@ -30,7 +27,7 @@ export function readAcls(target,{recursive=false}={}){
 }
 export function parseAces(sddl){
  const dacl=/^D:([A-Z]*)((?:\([^)]*\))*)/.exec(sddl);if(!dacl)throw Error('acl_failed');
- return{protected:dacl[1].includes('P'),aces:[...dacl[2].matchAll(/\(([^)]*)\)/g)].map(([,ace])=>{const parts=ace.split(';');return{type:parts[0],flags:parts[1],rights:parts[2],sid:canonical(parts[5])};})};
+ return{protected:dacl[1].includes('P'),aces:[...dacl[2].matchAll(/\(([^)]*)\)/g)].map(([,ace])=>{const parts=ace.split(';');return{type:parts[0],flags:parts[1],rights:parts[2],sid:parts[5]};})};
 }
 const onlyUser=(sddl,sid)=>{const{aces}=parseAces(sddl);return aces.length>0&&aces.every(ace=>ace.sid===sid&&ace.type==='A');};
 export function isPrivateToCurrentUser(target,{recursive=false}={}){
@@ -39,12 +36,34 @@ export function isPrivateToCurrentUser(target,{recursive=false}={}){
  return entries.length>0&&entries.every(entry=>onlyUser(entry.sddl,sid))&&parseAces(entries[0].sddl).protected;
 }
 function setExact(target,grant,sid){
+ // Reset drops every explicit entry, whatever account it names. Removing them one by one would need
+ // a numeric SID, and domain-relative SDDL names such as DA or LA have no fixed one. /grant:r alone
+ // would leave them in place.
+ run('icacls.exe',[target,'/reset','/L','/Q']);
  run('icacls.exe',[target,'/inheritance:r','/grant:r',`*${sid}:${grant}`,'/L','/Q']);
- // /grant:r replaces only this account's entry: remove every other explicit one by name.
- const[{sddl}]=readAcls(target);
- for(const foreign of new Set(parseAces(sddl).aces.map(ace=>ace.sid).filter(value=>value!==sid)))run('icacls.exe',[target,'/remove:g',`*${foreign}`,'/L','/Q']);
 }
 function refuseLink(target){if(fs.lstatSync(target).isSymbolicLink())throw Error('linked_path');}
+// icacls /T walks through junctions, so a link in here could change permissions anywhere.
+function refuseLinksInside(directory){
+ for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
+  const child=path.join(directory,entry.name);
+  if(entry.isSymbolicLink()||fs.lstatSync(child).isSymbolicLink())throw Error('linked_path');
+  if(entry.isDirectory())refuseLinksInside(child);
+ }
+}
+// The runtime path can come from an environment variable. Removing inheritance from one of these
+// would lock other software and users out of it.
+export function refuseSystemLocation(directory,env=process.env){
+ const resolved=path.resolve(directory),folded=resolved.toLowerCase(),separator=path.sep;
+ if(path.parse(resolved).root.toLowerCase()===folded+separator||path.parse(resolved).root.toLowerCase()===folded)throw Error('protected_path');
+ const inside=folded.endsWith(separator)?folded:folded+separator;
+ for(const name of ['USERPROFILE','SystemRoot','WINDIR','ProgramFiles','ProgramFiles(x86)','ProgramData','APPDATA','LOCALAPPDATA','TEMP','PUBLIC']){
+  const value=env[name];if(!value)continue;
+  const other=path.resolve(value).toLowerCase();
+  if(other===folded||(other+separator).startsWith(inside))throw Error('protected_path');
+ }
+ for(const value of [os.homedir(),os.tmpdir()]){const other=path.resolve(value).toLowerCase();if(other===folded||(other+separator).startsWith(inside))throw Error('protected_path');}
+}
 // Failures throw: the caller must then not publish secrets into this location.
 export function restrictFile(target){
  if(process.platform!=='win32')return false;
@@ -54,7 +73,10 @@ export function restrictFile(target){
 }
 export function restrictDirectory(directory){
  if(process.platform!=='win32')return false;
- refuseLink(directory);const sid=currentUserSid();setExact(directory,'(OI)(CI)F',sid);
+ refuseSystemLocation(directory);refuseLink(directory);refuseLinksInside(directory);
+ // Already private: nothing to do, and no moment in which it would inherit anything.
+ if(isPrivateToCurrentUser(directory,{recursive:true}))return true;
+ const sid=currentUserSid();setExact(directory,'(OI)(CI)F',sid);
  // Older files may carry explicit entries: reset them to inherit the private parent.
  if(fs.readdirSync(directory).length)run('icacls.exe',[path.join(directory,'*'),'/reset','/T','/C','/L','/Q']);
  if(!isPrivateToCurrentUser(directory,{recursive:true}))throw Error('acl_failed');

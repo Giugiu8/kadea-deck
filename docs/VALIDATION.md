@@ -4,6 +4,8 @@
 
 The test suite covers separate hook groups and consent, status-only operation, key-approval gating through real hook processes, the one-second hold through the real SDK socket, summaries and redaction, the decision log and its rotation, integrity failure through the real plugin process, exact ACLs on real NTFS folders read back from Windows, the managed-settings block and its behavior, byte-identical rebuilds from another path, and pinned workflows.
 
+A real Claude Code run (headless, isolated folder) passed through the hooks in `args` form: status changes arrived, a `Read` outside the working folder reached the receiver with its path, and a `Bash` command returned no decision. Approval-key layouts were rendered in a browser engine at full and device size; the font on real hardware was not checked.
+
 Not yet demonstrated: a run of the release workflow (it needs a pushed tag), the Linux rebuild job, a physical key pass with the hold, opening custom `claude://` and `codex://` links through `explorer.exe` on real hardware, and managed deployment on a real managed PC.
 
 ## 0.8 plugin installation

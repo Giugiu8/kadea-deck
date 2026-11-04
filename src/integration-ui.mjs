@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {APPROVAL_CONSENT} from './integrations.mjs';
-const ERRORS=['plugin_location','linked_path','incomplete_plugin','runtime_missing','custom_config','legacy_present','busy','settings_changed','invalid_settings','consent_required','locked_off','managed','acl_failed'];
+const ERRORS=['plugin_location','linked_path','incomplete_plugin','runtime_missing','custom_config','legacy_present','busy','settings_changed','invalid_settings','consent_required','locked_off','managed','acl_failed','protected_path'];
 export function registerIntegrationUi({ui,manager,connectCodex,diagnostics=()=>({}),blocked=()=>null,uuid=randomUUID}){
  let token=null,context=null,busy=false,refreshTimer=null,appearances=0;
  const current=action=>action?.id===context&&ui.action?.id===context;

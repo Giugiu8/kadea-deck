@@ -6,7 +6,7 @@
 
 - **Set up Claude** now adds status hooks only. The `PermissionRequest` hook needs a separate opt-in with a checkbox. Each group can be removed alone. An approval hook from an earlier version stays inactive and is removed by setup.
 - Approve keys need a one-second hold, also for Codex. A short press shows the alert and answers nothing.
-- Only allowlisted tools (default `Read`, `Grep`, `Glob`, `LS`) wait for a key. Commands, file changes, network access and sub-agents go straight to Claude's own dialog and cannot be added by configuration.
+- Only allowlisted tools (default `Read`, `Grep`, `Glob`, `LS`) wait for a key. Commands, file changes, network access and sub-agents go straight to Claude's own dialog and cannot be added by configuration. So do UNC and device paths, requests with invisible characters, and unknown tools whose whole input does not fit on the key.
 - Approval keys and the Property Inspector show the tool and a shortened, redacted summary of the request. Requests without displayable content stay in the dialog.
 - `bin/open.exe` is gone: links open through Windows' `explorer.exe`.
 

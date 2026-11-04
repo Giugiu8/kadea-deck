@@ -11,23 +11,23 @@ import {fileURLToPath} from 'node:url';
 import {DeckStore} from '../src/store.mjs';
 import {startReceiver} from '../src/receiver.mjs';
 import {DEFAULT_ALLOWLIST,RISKY_TOOLS,evaluateRequest,loadPolicy,writeConfig} from '../src/approval-policy.mjs';
-import {cardSvg,detailLines} from '../src/cards.mjs';
+import {cardSvg,detailLines,KEY_TEXT} from '../src/cards.mjs';
 const {summarizeTool,MAX}=createRequire(import.meta.url)('../hooks/tool-summary.cjs');
 const bridge=fileURLToPath(new URL('../hooks/bridge.cjs',import.meta.url));
 
 test('summaries pick the field that describes the action',()=>{
  assert.deepEqual(summarizeTool('Read',{file_path:'C:\\a\\b.txt'}),{kind:'path',text:'C:\\a\\b.txt'});
  assert.deepEqual(summarizeTool('Bash',{command:'npm test',description:'ignored'}),{kind:'text',text:'npm test'});
- assert.deepEqual(summarizeTool('Grep',{pattern:'TODO',path:'src'}),{kind:'text',text:'TODO in src'});
+ assert.deepEqual(summarizeTool('Grep',{pattern:'TODO',path:'src'}),{kind:'text',text:'src : TODO'});
  assert.deepEqual(summarizeTool('WebFetch',{url:'https://example.test/x'}),{kind:'text',text:'https://example.test/x'});
- assert.equal(summarizeTool('mcp__s__do',{target:'prod',n:1}).text,'target=prod');
+ assert.equal(summarizeTool('mcp__s__do',{target:'prod'}).text,'target=prod');
 });
 test('no describable input yields no summary',()=>{
  for(const input of [undefined,null,'text',[],{},{count:3},{file_path:'   '}])assert.equal(summarizeTool('Read',input),null);
 });
 test('summaries neutralize hidden characters that could disguise the action',()=>{
- const{text}=summarizeTool('Bash',{command:'safe\u202e cmd\u0000\u200b\nrm -rf x\u2066'});
- assert.equal(text,'safe cmd rm -rf x');
+ const{text,blocked}=summarizeTool('Bash',{command:'safe\u202e cmd\u0000\u200b\nrm -rf x\u2066'});
+ assert.equal(text,'safe cmd rm -rf x');assert.equal(blocked,'hidden_characters');
 });
 test('summaries redact common secret forms',()=>{
  for(const[command,secret]of [['deploy --token abc123','abc123'],['deploy --password=abc123','abc123'],['API_KEY=abc123 npm start','abc123'],['curl -H "Authorization: Bearer abc123" x','abc123'],['git clone https://me:abc123@host/r','abc123'],['x?token=abc123&y=1','abc123']]){
@@ -39,12 +39,12 @@ test('long values are cut visibly; a path keeps its file name and a command its 
  const path_=summarizeTool('Read',{file_path:'C:\\'+long+'\\secret.env'}),command=summarizeTool('Bash',{command:'rm '+long});
  assert.ok(path_.text.startsWith('…')&&path_.text.endsWith('secret.env'));assert.ok(command.text.startsWith('rm ')&&command.text.endsWith('…'));
  assert.ok(path_.text.length<=MAX+1&&command.text.length<=MAX+1);
- const lines=detailLines(path_);assert.equal(lines.length,3);assert.ok(lines[0].startsWith('…'));assert.ok(lines.at(-1).endsWith('secret.env'));
+ const lines=detailLines(path_);assert.equal(lines.length,4);assert.ok(lines[0].startsWith('…'));assert.ok(lines.at(-1).endsWith('secret.env'));
  assert.ok(detailLines(command).at(-1).endsWith('…'));
 });
 test('the approval key shows tool and content and escapes it',()=>{
- const svg=cardSvg({kind:'approval',decision:'allow',tool:'Read',summary:{kind:'path',text:'C:\\<a>&b.txt'},title:'Approve',hint:'HOLD 1 S'});
- for(const part of ['Read','&lt;a&gt;&amp;b.txt','Approve','HOLD 1 S'])assert.ok(svg.includes(part),part);assert.ok(!svg.includes('<a>'));
+ const svg=cardSvg({kind:'approval',decision:'allow',tool:'Read',summary:{kind:'path',text:'C:\\<a>&b.txt'},title:'Hold: Approve'});
+ for(const part of ['Read','&lt;a&gt;&amp;b.txt','Hold: Approve'])assert.ok(svg.includes(part),part);assert.ok(!svg.includes('<a>'));
 });
 
 const summary={kind:'path',text:'C:\\a.txt'},on={enabled:true,allowlist:[...DEFAULT_ALLOWLIST]};
@@ -115,3 +115,46 @@ test('the summary reaches the key in memory but never the state file or the log'
   assert.ok(!fs.readFileSync(path.join(dir,'decisions.jsonl'),'utf8').includes('PRIVATE_SENTINEL'));
  }finally{await receiver.close();}
 }));
+
+const allow={enabled:true,allowlist:['Read','Grep','Glob','LS','mcp__x__send']};
+const verdict=(tool,input)=>evaluateRequest(allow,tool,summarizeTool(tool,input));
+test('network and device paths never wait for a key, through any read-only tool',()=>{
+ for(const value of ['\\\\host\\share\\x','//host/share/x','\\\\?\\UNC\\host\\share\\x','\\\\.\\pipe\\x','/\\host\\share','  \\\\host\\share','file://host/share/x']){
+  assert.equal(verdict('Read',{file_path:value}).reason,'network_path',value);
+  assert.equal(verdict('LS',{path:value}).reason,'network_path',value);
+  assert.equal(verdict('Grep',{pattern:'a',path:value}).reason,'network_path',value);
+  assert.equal(verdict('Glob',{pattern:'*',path:value}).reason,'network_path',value);
+ }
+ assert.equal(verdict('Glob',{pattern:'\\\\host\\share\\*'}).reason,'network_path');
+ assert.equal(verdict('Grep',{pattern:'\\\\d+'}).approvable,true,'A search pattern with backslashes is no path');
+});
+test('a request with invisible characters stays in the dialog',()=>{
+ for(const value of ['C:\\a\\safe\u200b.txt','C:\\a\\txt.\u202eenv','C:\\a\\b\u00ad.txt','C:\\a\nb.txt'])assert.equal(verdict('Read',{file_path:value}).reason,'hidden_characters',JSON.stringify(value));
+ assert.equal(verdict('Read',{file_path:'C:\\a\\Prüfung 🛡.txt'}).approvable,true,'Ordinary Unicode is fine');
+});
+test('the key shows where a path really leads',()=>{
+ const secret='C:\\Users\\me\\.ssh\\id_rsa';
+ assert.equal(summarizeTool('Read',{file_path:secret+'\\'+'decoy'.repeat(20)+'.txt\\..'}).text,secret);
+ assert.equal(summarizeTool('Read',{file_path:'C:\\a\\.\\b\\..\\c.txt'}).text,'C:\\a\\c.txt');
+});
+test('a long search pattern cannot push the searched folder off the key',()=>{
+ const lines=detailLines(summarizeTool('Grep',{pattern:'a'.repeat(200),path:'C:\\Users\\me\\.ssh'})).join('');
+ assert.ok(lines.startsWith('C:\\Users\\me\\.ssh'),lines);
+ const deep=detailLines(summarizeTool('Glob',{pattern:'b'.repeat(200),path:'C:\\'+'x'.repeat(80)+'\\.ssh'})).join('');
+ assert.ok(deep.includes('.ssh'),deep);
+});
+test('unknown tools must show their whole input or stay in the dialog',()=>{
+ assert.equal(verdict('mcp__x__send',{to:'me'}).approvable,true);
+ assert.equal(verdict('mcp__x__send',{to:'me',options:{bcc:'other'}}).reason,'incomplete_display');
+ assert.equal(verdict('mcp__x__send',{a:'1',b:'2',c:'3',to:'x'.repeat(60)}).reason,'incomplete_display');
+ assert.equal(verdict('mcp__x__send',{a:'1',b:'2',c:'3',d:'4'}).approvable,true,'Four short fields fit');
+ assert.equal(verdict('mcp__x__send',{n:1}).reason,'no_visible_content');
+});
+test('input size cannot slow the hook down',()=>{
+ for(const command of ['a'.repeat(2_000_000),' a'.repeat(1_000_000),'token'.repeat(400_000),'-'.repeat(2_000_000),'//a:'.repeat(500_000)]){const start=Date.now();summarizeTool('Bash',{command});assert.ok(Date.now()-start<500,command.slice(0,8));}
+});
+test('key text fits the key at the size it is drawn',()=>{
+ const {perLine,rows,fontSize}=KEY_TEXT;assert.ok(perLine*fontSize*0.6<=144-2*12,'Line width');assert.ok(rows*19+42<=120,'Rows stop above the title');
+ assert.ok(perLine*rows>=52,'The display limit for unknown tools fits');
+ assert.ok(summarizeTool('mcp__x__send',{to:'x'.repeat(49)}).blocked===undefined,'52 characters are allowed');assert.equal(detailLines(summarizeTool('mcp__x__send',{to:'x'.repeat(49)})).join(''),'to='+'x'.repeat(49));
+});

@@ -28,5 +28,6 @@ export function evaluateRequest(policy,tool,summary){
  if(!policy?.enabled)return{approvable:false,reason:'approvals_off'};
  if(!validName(tool)||RISKY_TOOLS.has(tool)||!policy.allowlist.includes(tool))return{approvable:false,reason:'not_allowlisted'};
  if(!summary||typeof summary.text!=='string'||!summary.text)return{approvable:false,reason:'no_visible_content'};
+ if(summary.blocked)return{approvable:false,reason:['network_path','incomplete_display','hidden_characters'].includes(summary.blocked)?summary.blocked:'blocked'};
  return{approvable:true,reason:'allowlisted'};
 }
