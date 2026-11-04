@@ -46,10 +46,12 @@ export function cardSvg(card) {
   } else if (card.kind === 'approval') {
     const ink=card.decision==='deny'?palette.error:palette.unread;
     body+=`<rect x="2" y="2" width="140" height="140" rx="12" fill="${card.decision==='deny'?'#351c29':'#103025'}" stroke="${ink}" stroke-width="2"/>`;
-    const tool=String(card.tool??''),toolLabel=tool.length>17?'…'+tool.slice(-16):tool;
-    body+=text(72,21,toolLabel,13,palette.muted,700,'text-anchor="middle"');
+    // The marker differs per request, so a new request can never slip in under an identical image.
+    body+=text(12,21,String(card.tool??'').slice(0,17),13,palette.white,700);
+    body+=text(132,21,card.marker??'',11,palette.muted,500,'text-anchor="end"');
     detailLines(card.summary).forEach((line,i)=>{body+=`<text x="12" y="${42+i*19}" fill="${palette.white}" font-size="${KEY_TEXT.fontSize}" font-family="Cascadia Mono,Consolas,monospace" xml:space="preserve">${xml(line)}</text>`;});
-    body+=text(72,132,card.title,16,ink,700,'text-anchor="middle"');
+    if(card.project)body+=text(72,116,String(card.project).slice(0,20),11,palette.muted,500,'text-anchor="middle"');
+    body+=text(72,133,card.title,16,ink,700,'text-anchor="middle"');
   } else if (card.kind === 'action' || card.kind === 'app') {
     const ink=card.disabled?'#8190a6':card.icon==='check'?palette.unread:card.icon==='close'?palette.error:palette.white;
     const permission=!card.disabled&&['check','close'].includes(card.icon);
@@ -74,5 +76,5 @@ export function cardSvg(card) {
     body+=text(72,state==='unread'?134:133,s.label,state==='unread'?26:22,signal?'#0b1018':palette.idle,750,'text-anchor="middle" letter-spacing=".2"');
     if(selected)body+='<path d="M120 9h15v15" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>';
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144" font-family="Segoe UI Variable,Segoe UI,Arial,sans-serif"><rect width="144" height="144" fill="${palette.bg}"/>${body}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144" font-family="Segoe UI Variable,Segoe UI,Arial,sans-serif"><rect width="144" height="144" fill="${palette.bg}"/>${body}</svg>`.toWellFormed();
 }

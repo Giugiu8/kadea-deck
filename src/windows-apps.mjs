@@ -9,7 +9,8 @@ export function selectCodexPackage(packages,{exists=fs.existsSync,realpath=fs.re
  return null;
 }
 export async function discoverCodex(execute=execFile){
- const script="@(Get-AppxPackage -Name OpenAI.Codex | Where-Object { $_.PackageFamilyName -eq 'OpenAI.Codex_2p2nqsd0c76g0' -and $_.SignatureKind.ToString() -eq 'Store' -and -not $_.IsDevelopmentMode } | ForEach-Object { [pscustomobject]@{Name=$_.Name;PackageFamilyName=$_.PackageFamilyName;SignatureKind=$_.SignatureKind.ToString();IsDevelopmentMode=$_.IsDevelopmentMode;InstallLocation=$_.InstallLocation;Version=$_.Version.ToString()} }) | ConvertTo-Json -Compress";
+ // Works in Constrained Language Mode too: no type names and no method calls.
+ const script="@(Get-AppxPackage -Name OpenAI.Codex | Where-Object { $_.PackageFamilyName -eq 'OpenAI.Codex_2p2nqsd0c76g0' -and \"$($_.SignatureKind)\" -eq 'Store' -and -not $_.IsDevelopmentMode } | Select-Object Name,PackageFamilyName,@{n='SignatureKind';e={\"$($_.SignatureKind)\"}},IsDevelopmentMode,InstallLocation,@{n='Version';e={\"$($_.Version)\"}}) | ConvertTo-Json -Compress";
  try{
   const output=await new Promise((resolve,reject)=>execute('powershell.exe',['-NoProfile','-NonInteractive','-Command',script],{windowsHide:true,timeout:10_000,maxBuffer:64*1024,encoding:'utf8'},(error,stdout)=>error?reject(error):resolve(stdout)));
   return selectCodexPackage(JSON.parse(output||'[]'));

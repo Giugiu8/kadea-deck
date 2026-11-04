@@ -6,7 +6,11 @@ The test suite covers separate hook groups and consent, status-only operation, k
 
 A real Claude Code run (headless, isolated folder) passed through the hooks in `args` form: status changes arrived, a `Read` outside the working folder reached the receiver with its path, and a `Bash` command returned no decision. Approval-key layouts were rendered in a browser engine at full and device size; the font on real hardware was not checked.
 
-Not yet demonstrated: a run of the release workflow (it needs a pushed tag), the Linux rebuild job, a physical key pass with the hold, opening custom `claude://` and `codex://` links through `explorer.exe` on real hardware, and managed deployment on a real managed PC.
+An earlier 0.9 build ran under real Stream Deck 7 on the development PC, through its development link: the plugin started under Stream Deck's Node 20, passed the integrity check, made its folder private and received real hook events. That was not a clean install of a release.
+
+Three independent reviews (Codex and two fresh Claude instances) tested the candidate adversarially and for locked-down PCs; their findings were fixed. No allow without a held press on a bound request was found.
+
+Not yet demonstrated: a run of the release workflow (it needs a pushed tag), the Linux rebuild job, a physical key pass with the hold, opening custom `claude://` links through `explorer.exe` on real hardware, an update by Stream Deck itself, and any run on a domain-joined, AppLocker or managed PC.
 
 ## 0.8 plugin installation
 

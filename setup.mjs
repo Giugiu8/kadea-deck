@@ -5,9 +5,11 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {mergeHooks,owned} from './setup-hooks.mjs';
 import {restrictDirectory} from './windows-acl.mjs';
+import {managedRoot,readManagedState} from './managed-state.mjs';
 import {inspectLegacy,removeLegacyHooks,rewriteLegacyProfile,legacyConnectionFile,runtimeMetadataFiles} from './migration.mjs';
 const uuid='de.cardea.deck.sdPlugin',profileId='83F6A461-7D15-4BBF-B345-C10B99A70961.sdProfile';
-const read=f=>fs.readFileSync(f,'utf8');
+// Fatal decoding: invalid bytes in someone's settings must stop setup, not be replaced and written back.
+const read=f=>new TextDecoder('utf-8',{fatal:true}).decode(fs.readFileSync(f));
 const json=f=>JSON.parse(read(f).replace(/^\uFEFF/,''));
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const digest=f=>fs.existsSync(f)?hash(fs.readFileSync(f)):null;
@@ -22,7 +24,8 @@ export function verifyBundle(directory){
  for(const [rel,expected]of Object.entries(integrity.files)){const file=localPath(directory,path.join(directory,rel));if(!/^[a-f0-9]{64}$/.test(expected)||digest(file)!==expected)throw Error('Download verification failed: extract a fresh release archive');}
  return integrity.version;
 }
-export function createPlan({directory,home,appData,node=process.execPath,deviceId=null,codexExecutable=null,approvals=false}={}){
+export function createPlan({directory,home,appData,node=process.execPath,deviceId=null,codexExecutable=null,approvals=false,managedDirectory=managedRoot()}={}){
+ if(readManagedState(managedDirectory).active)throw Error('Claude hooks on this PC are managed by your organization. Install the plugin only; see docs/MANAGED-SETTINGS.md.');
  const version=verifyBundle(directory),pluginRoot=path.join(appData,'Elgato/StreamDeck/Plugins'),profilesRoot=path.join(appData,'Elgato/StreamDeck/ProfilesV3');
  const plugin=localPath(pluginRoot,path.join(pluginRoot,uuid)),profile=localPath(profilesRoot,path.join(profilesRoot,profileId));
  const runtime=localPath(home,path.join(home,'.cardeadeck')),receipt=localPath(runtime,path.join(runtime,'install.json'));
@@ -95,6 +98,7 @@ export function applyPlan(plan,{host=()=>{}}={}){
   }
   else if(!fs.existsSync(plan.profile)){preserve(plan.profile,backup,undo);fs.mkdirSync(path.dirname(plan.profile),{recursive:true});fs.cpSync(plan.sourceProfile,plan.profile,{recursive:true});const file=path.join(plan.profile,'manifest.json'),top=json(file);top.Device.UUID=plan.deviceId;atomic(file,JSON.stringify(top));}
   else{const file=path.join(plan.profile,'manifest.json'),top=json(file);if(top.Name==='Cardea Deck'){const item=preserve(file,backup,undo);top.Name='Cardea Deck';atomic(file,JSON.stringify(top));item.written=digest(file);}}
+  if(digest(plan.settings)!==plan.settingsHash)throw Error('Claude settings changed during setup');
   const settingsUndo=preserve(plan.settings,backup,undo);atomic(plan.settings,JSON.stringify(plan.merged,null,2)+'\n');settingsUndo.written=digest(plan.settings);
   if(migration){
    for(const name of runtimeMetadataFiles){

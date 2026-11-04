@@ -7,7 +7,7 @@ import path from 'node:path';
 import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {managedBlock} from '../managed-settings.mjs';
-import {approvalEvent,statusEvents} from '../claude-hooks.mjs';
+import {approvalEvent,mergeHooks,statusEvents} from '../claude-hooks.mjs';
 import {createIntegrations,readManagedState,APPROVAL_CONSENT} from '../src/integrations.mjs';
 import {readConfig} from '../src/approval-policy.mjs';
 import {DeckStore} from '../src/store.mjs';
@@ -45,21 +45,23 @@ test('a hook in exec form, as the block defines it, reaches the receiver from an
 }));
 const put=(file,data)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,typeof data==='string'?data:JSON.stringify(data));};
 test('managed state is read from the main file and the drop-in folder',()=>temp(dir=>{
- assert.deepEqual(readManagedState(dir),{present:false,only:false,status:false,approval:false,active:false});
+ assert.deepEqual(readManagedState(dir),{present:false,only:false,status:false,approval:false,unreadable:false,active:false});
  put(path.join(dir,'managed-settings.json'),{model:'x'});assert.equal(readManagedState(dir).active,false);assert.equal(readManagedState(dir).present,true);
  put(path.join(dir,'managed-settings.d/20-cardea.json'),managedBlock({approvals:true}));
- assert.deepEqual(readManagedState(dir),{present:true,only:true,status:true,approval:true,active:true});
+ assert.deepEqual(readManagedState(dir),{present:true,only:true,status:true,approval:true,unreadable:false,active:true});
+ put(path.join(dir,'managed-settings.json'),'{broken');assert.equal(readManagedState(dir).active,true,'An unreadable file counts as managed');
 }));
 function fixture(fn){return temp(dir=>{
  const home=path.join(dir,'user'),appData=path.join(home,'AppData/Roaming'),plugin=path.join(appData,'Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin'),node=path.join(dir,'node.exe'),managedDirectory=path.join(dir,'ClaudeCode'),machineFile=path.join(dir,'policy.json');
- put(node,'synthetic');put(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck'});for(const name of ['bridge','runtime','statusline','permission-auth','receiver-client','tool-summary'])put(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
+ put(node,'synthetic');put(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck'});for(const name of ['approval-rules','bridge','runtime','statusline','permission-auth','receiver-client','tool-summary'])put(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
  const settings=path.join(home,'.claude/settings.json');put(settings,{env:{KEEP:'1'}});
  return fn({dir,home,settings,managedDirectory,machineFile,runtime:path.join(home,'.cardeadeck'),manager:createIntegrations({home,appData,plugin,node,configDir:'',managedDirectory,machineFile})});
 });}
 test('with managed hooks the plugin never writes the user settings file',()=>fixture(f=>{
  put(path.join(f.managedDirectory,'managed-settings.json'),managedBlock());
  const before=fs.readFileSync(f.settings),status=f.manager.status();assert.equal(status.claude,'managed');assert.equal(status.managed,true);assert.equal(status.approvals,'not_deployed');
- for(const command of ['setupClaude','removeStatus','removeClaude'])assert.throws(()=>f.manager.update(command),/managed/,command);
+ assert.throws(()=>f.manager.update('setupClaude'),/managed/);
+ for(const command of ['removeStatus','removeClaude'])f.manager.update(command);
  assert.throws(()=>f.manager.update('enableApprovals',{consent:APPROVAL_CONSENT}),/managed/,'No approval hook was deployed');
  assert.deepEqual(fs.readFileSync(f.settings),before);
 }));
@@ -69,6 +71,11 @@ test('a deployed approval hook still needs the user opt-in, stored outside the s
  assert.throws(()=>f.manager.update('enableApprovals'),/consent_required/);
  assert.equal(f.manager.update('enableApprovals',{consent:APPROVAL_CONSENT}).approvals,'on');assert.equal(readConfig(f.runtime).approvalsEnabled,true);
  assert.equal(f.manager.update('disableApprovals').approvals,'hook_inactive');assert.deepEqual(fs.readFileSync(f.settings),before);
+}));
+test('old user entries can still be removed when hooks become managed',()=>fixture(f=>{
+ fs.writeFileSync(f.settings,JSON.stringify(mergeHooks({env:{KEEP:'1'}},{node:'C:\\n\\node.exe',plugin:path.join(f.home,'AppData/Roaming/Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin')})));
+ put(path.join(f.managedDirectory,'managed-settings.json'),managedBlock());
+ f.manager.update('removeClaude');assert.deepEqual(JSON.parse(fs.readFileSync(f.settings)),{env:{KEEP:'1'}});
 }));
 test('restricting hooks without deploying Cardea is reported and changes nothing',()=>fixture(f=>{
  put(path.join(f.managedDirectory,'managed-settings.json'),{allowManagedHooksOnly:true});

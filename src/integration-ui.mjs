@@ -14,7 +14,8 @@ export function registerIntegrationUi({ui,manager,connectCodex,diagnostics=()=>(
   // Approvals need the extra consent field that only the ticked inspector checkbox sends.
   const consenting=p.cmd==='enableApprovals';
   if(!allowed(ev.action)||busy||p.nonce!==token||Object.keys(p).length!==(consenting?3:2)||(consenting&&p.consent!==APPROVAL_CONSENT)||!['setupClaude','enableApprovals','disableApprovals','removeStatus','removeClaude','connectCodex'].includes(p.cmd))return;
-  if(blocked()){await send(blocked());return;}
+  // Only damaged files stop everything; a folder that cannot be private still allows Codex and a retry.
+  if(blocked()==='integrity_failed'){await send(blocked());return;}
   busy=true;const started=token;await send('working');let result='done';
   try{
    if(token!==started||!current(ev.action))return;

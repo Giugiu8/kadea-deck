@@ -14,8 +14,9 @@ Cardea Deck ist eine experimentelle Windows-Beta für das Stream Deck MK.2 mit 1
 
 Standardmäßig aus. Wer sie möchte, setzt in **Approval by key** das Häkchen und klickt **Enable key approvals**. Danach gilt:
 
-- Die Taste zeigt Werkzeug und gekürzten Inhalt. **Approve** muss eine Sekunde gehalten werden, **Decline** reicht ein Druck.
-- Freigeben lassen sich nur `Read`, `Grep`, `Glob` und `LS`. Befehle, Schreibzugriffe, Netzwerkzugriffe und Unteragenten gehen immer in den normalen Claude-Dialog. Das lässt sich auch per Konfiguration nicht ändern.
+- Die Taste zeigt Werkzeug, Inhalt, Projekt und eine Kennung der Anfrage. **Approve** muss eine Sekunde gehalten werden, **Decline** reicht ein Druck. Wer eine neue Anfrage in den ersten 0,6 Sekunden trifft, löst nichts aus. In Multi Actions funktionieren diese Tasten nicht.
+- Pfade ins Netz, ungewöhnliche Zeichen und alles, was die Taste nicht sicher zeigen kann, bleiben im Claude-Dialog.
+- Freigeben lassen sich nur `Read`, `Grep`, `Glob` und `LS`. Alle anderen eingebauten Werkzeuge gehen immer in den normalen Claude-Dialog. Das lässt sich auch per Konfiguration nicht ändern; ergänzen lassen sich nur einzelne kurze MCP-Werkzeugnamen, auf eigene Verantwortung.
 - Jede Entscheidung steht ohne Inhalte in `%USERPROFILE%\.cardeadeck\decisions.jsonl`: Zeit, Sitzung, Werkzeug, Ergebnis.
 
 **Disable key approvals** nimmt nur diesen Hook wieder heraus, **Remove status hooks** nur die Status-Hooks, **Remove all Claude hooks** beide.
@@ -27,9 +28,9 @@ Für IT-Administration, wenn `~/.claude/settings.json` unverändert bleiben soll
 1. Release prüfen: [REPRODUCE.md](REPRODUCE.md).
 2. Den Ordner `hooks` aus dem Release nach `C:\Program Files\Cardea Deck\hooks` kopieren und Node.js 20 oder neuer unter einem festen Pfad bereitstellen.
 3. Die Vorlage [managed-settings.template.json](managed-settings.template.json) oder die Ausgabe von `node managed-settings.mjs` in `C:\Program Files\ClaudeCode\managed-settings.json` übernehmen. Der Freigabe-Hook ist nur mit `--approvals` enthalten.
-4. Das Plugin verteilen. **Set up Claude** wird nicht gebraucht; das Plugin meldet die Verwaltung und schreibt nichts in die Benutzereinstellungen. Bei Verteilung über die Registry oder Server-Einstellungen erkennt es das nicht, siehe Anleitung.
+4. Das Plugin verteilen. **Set up Claude** wird nicht gebraucht; das Plugin meldet die Verwaltung und schreibt nichts in die Benutzereinstellungen. Bei Verteilung über die Registry oder Server-Einstellungen erkennt es das nicht, siehe Anleitung. Dort steht auch, welche Programme das Plugin startet, falls die Sicherheitssoftware danach fragt.
 
-Mit `%ProgramData%\CardeaDeck\policy.json` und `{ "approvalsAllowed": false }` lassen sich Freigaben per Taste zentral abschalten.
+Mit `%ProgramData%\CardeaDeck\policy.json` und `{ "approvalsAllowed": false }` lassen sich Freigaben per Taste zentral abschalten; den Ordner dafür selbst anlegen und nur für Administratoren beschreibbar machen. Eine beschädigte Datei schaltet die Freigaben ebenfalls ab. Ganz sicher ausgeschlossen sind sie nur, wenn der Freigabe-Hook gar nicht verteilt wird.
 
 ## Update und Entfernen
 

@@ -4,7 +4,7 @@ function fixture(fn){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-integrations-')),home=path.join(dir,'user'),appData=path.join(home,'AppData/Roaming'),plugin=path.join(appData,'Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin'),node=path.join(dir,'node.exe');
  const put=(file,data)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,typeof data==='string'?data:JSON.stringify(data));};
  put(node,'synthetic executable');put(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck',Version:'0.8.0.0'});
- for(const name of ['bridge','runtime','statusline','permission-auth','receiver-client','tool-summary'])put(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
+ for(const name of ['approval-rules','bridge','runtime','statusline','permission-auth','receiver-client','tool-summary'])put(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
  const settings=path.join(home,'.claude/settings.json'),foreign={env:{TOKEN:'SYNTHETIC_PRIVATE'},hooks:{Stop:[{hooks:[{type:'command',command:'echo preserved'}]}]},statusLine:{type:'command',command:'echo preserved status'}};put(settings,foreign);
  try{return fn({dir,home,appData,plugin,node,put,settings,foreign,create:options=>createIntegrations({home,appData,plugin,node,configDir:'',managedDirectory:path.join(dir,'no-managed-settings'),machineFile:path.join(dir,'no-machine-policy.json'),...options})});}
  finally{assert.equal(path.dirname(dir),os.tmpdir());assert.ok(path.basename(dir).startsWith('cardea-integrations-'));fs.rmSync(dir,{recursive:true,force:true});}

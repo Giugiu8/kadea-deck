@@ -72,7 +72,7 @@ Navigation on every page: **Claude · Codex · Controls · Apps**.
 
 Six chat keys per provider, with the same positions and renderer. Press a chat to select/open it. Empty chat slots open a blank composer. A white corner marks selection. Choosing/opening alone does not acknowledge a Claude result; **Read** does.
 
-From 0.9, **Approve** needs a one-second hold and key approvals must be enabled first. They cover allowlisted low-risk tools only (`Read`, `Grep`, `Glob`, `LS` by default) and show the tool and shortened content on the key. Commands, file changes and network access stay in Claude's own dialog.
+From 0.9, **Approve** needs a one-second hold and key approvals must be enabled first. They cover `Read`, `Grep`, `Glob` and `LS`, and show the tool and content on the key. Commands, file changes, network access and anything the key cannot show reliably stay in Claude's own dialog.
 
 **Approve/Decline** act only on the selected supported pending request, once. Codex uses a fresh owner snapshot and a durable hashed send journal. Ambiguous sends remain locked; continue in the chat instead of deleting the journal. Unsupported or multiple requests stay in the chat. No permanent blanket approval.
 

@@ -16,7 +16,7 @@ const allow=JSON.stringify({hookSpecificOutput:{hookEventName:'PermissionRequest
 async function hook(home,executable=bridge,event='PermissionRequest'){
  const child=spawn(process.execPath,[executable,event],{env:{...process.env,CARDEA_DECK_HOME:home},windowsHide:true,stdio:['pipe','pipe','pipe']});
  let stdout='',stderr='';child.stdout.on('data',b=>stdout+=b);child.stderr.on('data',b=>stderr+=b);
- const ended=once(child,'close');child.stdin.end(JSON.stringify({session_id:'isolated-approval',tool_name:'Read',cwd:'C:\\Prüfung-🛡',rate_limits:{five_hour:{used_percentage:10,resets_at:2000000000}}}));
+ const ended=once(child,'close');child.stdin.end(JSON.stringify({session_id:'isolated-approval',tool_name:'Read',tool_input:{file_path:'C:\\example\\file.txt'},cwd:'C:\\Prüfung-🛡',rate_limits:{five_hour:{used_percentage:10,resets_at:2000000000}}}));
  const [code]=await ended;return{code,stdout,stderr};
 }
 function removeFixture(directory){
@@ -162,7 +162,7 @@ test('receiver rejects missing challenges before creating pending permissions an
 test('a missing packaged auth helper is a silent no-decision outcome',async()=>{
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-permission-'));
  try{
-  for(const name of ['bridge.cjs','runtime.cjs','receiver-client.cjs','tool-summary.cjs'])fs.copyFileSync(fileURLToPath(new URL('../hooks/'+name,import.meta.url)),path.join(directory,name));
+  for(const name of ['approval-rules.cjs','bridge.cjs','runtime.cjs','receiver-client.cjs','tool-summary.cjs'])fs.copyFileSync(fileURLToPath(new URL('../hooks/'+name,import.meta.url)),path.join(directory,name));
   assert.deepEqual(await hook(directory,path.join(directory,'bridge.cjs')),{code:0,stdout:'',stderr:''});
  }finally{removeFixture(directory);}
 });

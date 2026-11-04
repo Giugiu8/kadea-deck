@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 export class PermissionBroker {
-  constructor(store,{timeoutMs=55_000,clock=Date.now,log=null}={}){
-    this.log=log;this.store=store;this.timeoutMs=timeoutMs;this.clock=clock;this.pending=new Map();
+  constructor(store,{timeoutMs=55_000,clock=Date.now,log=null,authorize=null}={}){
+    this.log=log;this.authorize=authorize;this.store=store;this.timeoutMs=timeoutMs;this.clock=clock;this.pending=new Map();
     this.onChange=()=>{for(const [id,p]of this.pending){const s=store.get(p.sessionId);if(!s||s.ended||s.turn!==p.turn||s.requestId!==id)this.finish(id,null,'cancelled');}};
     store.on('change',this.onChange);
   }
@@ -10,17 +10,22 @@ export class PermissionBroker {
     // A newer request retires the old held transport, never answers it implicitly.
     for(const [id,p]of this.pending)if(p.sessionId===sessionId)this.finish(id,null,'cancelled');
     const id=randomUUID(),p={id,sessionId,turn:s.turn,tool:s.tool,logTool:tool??s.tool,summary,response,send,expires:this.clock()+this.timeoutMs};
-    this.pending.set(id,p);this.store.beginPermission(sessionId,id,p.tool);
+    this.pending.set(id,p);
     p.timer=setTimeout(()=>this.finish(id,null,'timeout'),this.timeoutMs);p.timer.unref();
-    response.once('close',()=>this.finish(id,null,'cancelled'));return id;
+    response.once('close',()=>this.finish(id,null,'cancelled'));
+    this.store.beginPermission(sessionId,id,p.tool);return id;
   }
   answer({sessionId,requestId},decision){
     if(!['allow','deny'].includes(decision))return false;
     const p=this.pending.get(requestId),s=this.store.get(sessionId);
     if(!p||p.sessionId!==sessionId||!s||s.turn!==p.turn||s.requestId!==requestId||p.expires<=this.clock()||p.response.destroyed||p.response.writableEnded)return false;
+    // The policy may have changed since the request arrived.
+    if(decision==='allow'&&this.authorize&&!this.authorize(p)){this.finish(requestId,null,'cancelled');return false;}
     this.finish(requestId,decision);return true;
   }
   summary(requestId){return this.pending.get(requestId)?.summary??null;}
+  request(requestId){const p=this.pending.get(requestId);return p?{tool:p.logTool,summary:p.summary}:null;}
+  revalidate(){if(this.authorize)for(const[id,p]of[...this.pending])if(!this.authorize(p))this.finish(id,null,'cancelled');}
   finish(id,decision,outcome='cancelled'){
     const p=this.pending.get(id);if(!p)return;this.pending.delete(id);clearTimeout(p.timer);
     this.log?.record({sessionId:p.sessionId,tool:p.logTool,decision:decision??outcome});

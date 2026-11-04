@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import path from 'node:path';
 export const EVENTS = new Set(['SessionStart','UserPromptSubmit','PreToolUse','PostToolUse','PostToolUseFailure','PermissionRequest','Notification','Stop','StopFailure','SessionEnd','SubagentStart','SubagentStop']);
-export const clean = (value,max=180) => typeof value === 'string' ? value.replace(/[\x00-\x1f\x7f]/g,'').slice(0,max) : '';
+export const clean = (value,max=180) => typeof value === 'string' ? value.replace(/[\x00-\x1f\x7f]/g,'').slice(0,max).toWellFormed() : '';
 const sidPattern = /^[a-zA-Z0-9_-]{1,160}$/;
 const project = cwd => clean(cwd.split(/[\\/]/).filter(Boolean).at(-1) || 'Claude',32);
 export class DeckStore extends EventEmitter {

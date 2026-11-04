@@ -8,6 +8,7 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {reproducibleFiles,pluginFiles} from '../plugin-files.mjs';
 import {checkSbom} from '../verify-release.mjs';
+import {compareProfile,readZip} from '../reproduce.mjs';
 const root=path.resolve('.');
 const workflow=name=>fs.readFileSync(path.join(root,'.github/workflows',name),'utf8');
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
@@ -20,10 +21,12 @@ test('the release runs only on tags, with least privilege per job, attestation a
  const text=workflow('release.yml');
  assert.match(text,/on:\n\s+push:\n\s+tags:\n\s+- 'v\*'\n/);assert.ok(!/\n\s+branches:/.test(text));assert.match(text,/^permissions: \{\}$/m);
  const job=name=>{const start=text.indexOf(`\n  ${name}:\n`);assert.ok(start>0,name);const rest=text.slice(start+1),next=rest.slice(3).search(/\n  [a-z]+:\n/);return next<0?rest:rest.slice(0,next+3);};
- assert.match(job('build'),/id-token: write/);assert.match(job('build'),/attestations: write/);assert.match(job('build'),/contents: read/);assert.ok(!/contents: write/.test(job('build')));
+ assert.ok(!/id-token|attestations: write|contents: write/.test(job('build')),'Building runs repository and package-manager code: no signing rights');assert.match(job('build'),/contents: read/);
+ assert.match(job('attest'),/id-token: write/);assert.match(job('attest'),/attestations: write/);assert.ok(!/actions\/checkout|setup-node|npm |choco|run:/.test(job('attest')),'The job with signing rights runs no code from the repository');
+ assert.match(job('attest'),/attest-build-provenance@/);assert.match(job('attest'),/attest-sbom@/);
  assert.ok(!/id-token/.test(job('publish')));assert.match(job('publish'),/contents: write/);assert.ok(!/actions\/checkout/.test(job('publish')),'Publishing runs no repository code');
- assert.match(job('publish'),/needs: \[build, reproduce\]/);assert.match(job('reproduce'),/node reproduce\.mjs unpacked/);assert.match(job('reproduce'),/ubuntu/);
- assert.match(job('build'),/attest-build-provenance@/);assert.match(job('build'),/attest-sbom@/);
+ assert.match(job('publish'),/needs: \[build, reproduce, attest\]/);assert.match(job('attest'),/needs: \[build, reproduce\]/);
+ assert.match(job('reproduce'),/node reproduce\.mjs release-files\/Cardea-Deck-\*\.streamDeckPlugin/);assert.match(job('reproduce'),/advanced-portable\.zip/);assert.match(job('reproduce'),/Remove-Claude-Hooks\.ps1/);assert.match(job('reproduce'),/ubuntu/);
  assert.ok(!/cache: npm/.test(text),'No dependency cache in a release');assert.match(text,/does not match package version/);
 });
 function buildCopy(dir,out){
@@ -47,10 +50,13 @@ test('every packaged file that can execute is covered by the comparison',()=>{
 test('reproduce.mjs accepts a matching plugin and reports a changed file',()=>inTemp(dir=>{
  const copy=path.join(dir,'released');fs.cpSync(path.join(root,'dist/de.cardea.deck.sdPlugin'),copy,{recursive:true,filter:source=>path.basename(source)!=='logs'});
  const run=()=>spawnSync(process.execPath,['reproduce.mjs',copy],{cwd:root,encoding:'utf8',windowsHide:true});
- const good=run();assert.equal(good.status,0,good.stdout+good.stderr);assert.match(good.stdout,/All \d+ executable files match/);
+ const good=run();assert.equal(good.status,0,good.stdout+good.stderr);assert.match(good.stdout,/All \d+ checks match/);
  fs.appendFileSync(path.join(copy,'bin/plugin.mjs'),'// added after the build\n');
  const bad=run();assert.equal(bad.status,1);assert.match(bad.stdout,/DIFFERENT .*bin\/plugin\.mjs/);
  fs.unlinkSync(path.join(copy,'hooks/bridge.cjs'));assert.match(run().stdout,/DIFFERENT .*hooks\/bridge\.cjs.*\(missing\)/);
+ fs.copyFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin/hooks/bridge.cjs'),path.join(copy,'hooks/bridge.cjs'));fs.copyFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin/bin/plugin.mjs'),path.join(copy,'bin/plugin.mjs'));
+ fs.writeFileSync(path.join(copy,'hooks/planted.cjs'),'// x');const planted=run();assert.equal(planted.status,1);assert.match(planted.stdout,/DIFFERENT .*hooks\/planted\.cjs/);fs.unlinkSync(path.join(copy,'hooks/planted.cjs'));
+ fs.copyFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin/manifest.json'),path.join(copy,'package.json'));assert.equal(run().status,1,'Any listed file counts');
 }));
 test('line endings are fixed for every checkout, so hashes do not depend on Git settings',()=>{
  assert.match(fs.readFileSync(path.join(root,'.gitattributes'),'utf8'),/^\* text=auto eol=lf$/m);
@@ -61,4 +67,8 @@ test('the SBOM check wants the runtime dependencies and rejects build-only tools
  assert.throws(()=>checkSbom({bomFormat:'other',components:good.components}),/SBOM/);
  assert.throws(()=>checkSbom({bomFormat:'CycloneDX',components:[{name:'ws'}]}),/SBOM/);
  assert.throws(()=>checkSbom({bomFormat:'CycloneDX',components:[...good.components,{name:'esbuild'}]}),/SBOM/);
+});
+test('the profile comparison sees a key that was pointed somewhere else',()=>{
+ const profile=fs.readFileSync(path.join(root,'dist/de.cardea.deck.sdPlugin/profiles/Cardea Deck.streamDeckProfile')),version=JSON.parse(fs.readFileSync(path.join(root,'package.json'))).version;
+ assert.ok(readZip(profile).size>4);assert.equal(compareProfile(profile,version),null);assert.equal(compareProfile(null,version),'profile is missing');
 });

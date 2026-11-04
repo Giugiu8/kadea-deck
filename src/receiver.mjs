@@ -9,17 +9,18 @@ import permissionAuth from '../hooks/permission-auth.cjs';
 import { restrictDirectory,restrictFile } from '../windows-acl.mjs';
 const {isHexKey,permissionProof,identityProof}=permissionAuth;
 export async function startReceiver(store,{directory,timeoutMs,getDiagnostics=()=>({}),acl={restrictDirectory,restrictFile},policy=()=>loadPolicy({directory}),log=new DecisionLog({directory})}={}){
-  const token=randomBytes(32).toString('hex'),permissionKey=randomBytes(32).toString('hex'),broker=new PermissionBroker(store,{timeoutMs,log});
+  const token=randomBytes(32).toString('hex'),permissionKey=randomBytes(32).toString('hex'),broker=new PermissionBroker(store,{timeoutMs,log,authorize:request=>evaluateRequest(policy(),request.logTool,request.summary).approvable});
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');
+    if(req.headers.origin){res.writeHead(403).end('{}');return;}
     if(req.url==='/health'&&req.method==='GET'){res.end('{"app":"Cardea Deck","schema":1}');return;}
     if(req.url==='/identity'&&req.method==='GET'){
       const challenge=req.headers['x-cardea-nonce'];
-      if(req.headers.origin||!isHexKey(challenge)){res.writeHead(400).end('{}');return;}
+      if(!isHexKey(challenge)){res.writeHead(400).end('{}');return;}
       res.setHeader('X-Cardea-Proof',identityProof(permissionKey,challenge));res.end('{}');return;
     }
     const key=req.headers['x-cardea-token'];
-    if(req.headers.origin||typeof key!=='string'||!/^[a-f0-9]{64}$/.test(key)||!timingSafeEqual(Buffer.from(key),Buffer.from(token))){res.writeHead(403).end('{}');return;}
+    if(typeof key!=='string'||!/^[a-f0-9]{64}$/.test(key)||!timingSafeEqual(Buffer.from(key),Buffer.from(token))){res.writeHead(403).end('{}');return;}
     if(req.url==='/status'&&req.method==='GET'){res.end(JSON.stringify({schema:1,sourceHasEvents:store.connected,sessionCount:store.sessions.size,pendingRequests:broker.pending.size,persistenceOk:!store.persistenceError,decisionLogOk:log.ok,approvalsEnabled:policy().enabled===true,...getDiagnostics()}));return;}
     if(req.method!=='POST'||!['/event','/permission','/quota'].includes(req.url)){res.writeHead(404).end('{}');return;}
     const nonce=req.headers['x-cardea-nonce'];

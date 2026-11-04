@@ -14,20 +14,32 @@ function Assert-LocalPath([string]$Target){
  }
  return $absolute
 }
+function Own-Parts([string]$Node,[string]$Script,$HookEvent){
+ if([IO.Path]::GetFileName($Node.Replace('/','\')) -notin @('node','node.exe')){return $false}
+ $location=$Script.Replace('\','/')
+ if($location -match '(?i)/de\.cardea\.(?:deck|kadeadeck)\.sdPlugin/hooks/statusline\.cjs\z'){return -not $HookEvent}
+ if($location -notmatch '(?i)/de\.cardea\.(?:deck|kadeadeck)\.sdPlugin/hooks/bridge\.cjs\z'){return $false}
+ return $HookEvent -cin @('SessionStart','UserPromptSubmit','PreToolUse','PostToolUse','PostToolUseFailure','PermissionRequest','Notification','Stop','StopFailure','SessionEnd','SubagentStart','SubagentStop')
+}
 function Own-Command($Command){
  if($Command -isnot [string]){return $false}
  $parts=[regex]::Match($Command,'^"([^"\r\n]+)"\s+"([^"\r\n]+)"(?:\s+([A-Za-z]+))?\z')
+ if(-not $parts.Success){$parts=[regex]::Match($Command,'^([^\s"]+)\s+([^\s"]+\.cjs)(?:\s+([A-Za-z]+))?\z')}
  if(-not $parts.Success){return $false}
- if([IO.Path]::GetFileName($parts.Groups[1].Value.Replace('/','\')) -notin @('node','node.exe')){return $false}
- $script=$parts.Groups[2].Value.Replace('\','/')
- if($script -match '(?i)/de\.cardea\.(?:deck|kadeadeck)\.sdPlugin/hooks/statusline\.cjs\z'){return -not $parts.Groups[3].Success}
- if($script -notmatch '(?i)/de\.cardea\.(?:deck|kadeadeck)\.sdPlugin/hooks/bridge\.cjs\z'){return $false}
- return $parts.Groups[3].Value -cin @('SessionStart','UserPromptSubmit','PreToolUse','PostToolUse','PostToolUseFailure','PermissionRequest','Notification','Stop','StopFailure','SessionEnd','SubagentStart','SubagentStop')
+ return Own-Parts $parts.Groups[1].Value $parts.Groups[2].Value $parts.Groups[3].Value
 }
-function Wanted-Command($Command){
- if(-not (Own-Command $Command)){return $false}
+function Own-Hook($Hook){
+ if($null -eq $Hook.args){return Own-Command $Hook.command}
+ if($Hook.command -isnot [string]){return $false}
+ $arguments=@($Hook.args)
+ if($arguments.Count -lt 1 -or $arguments.Count -gt 2 -or @($arguments | Where-Object {$_ -isnot [string]}).Count){return $false}
+ return Own-Parts $Hook.command $arguments[0] $(if($arguments.Count -eq 2){$arguments[1]}else{$null})
+}
+function Wanted-Hook($Hook){
+ if(-not (Own-Hook $Hook)){return $false}
  if($Group -eq 'All'){return $true}
- return ($Group -eq 'Approval') -eq ($Command -match '\sPermissionRequest\z')
+ $approval=("$($Hook.command)" -match '\sPermissionRequest\z') -or (@($Hook.args)[-1] -ceq 'PermissionRequest')
+ return ($Group -eq 'Approval') -eq $approval
 }
 function Digest([byte[]]$Data){$algorithm=[Security.Cryptography.SHA256]::Create();try{return [Convert]::ToBase64String($algorithm.ComputeHash($Data))}finally{$algorithm.Dispose()}}
 $settings=Assert-LocalPath (Join-Path $taskHome '.claude/settings.json')
@@ -51,14 +63,14 @@ try{
    if($property.Value -isnot [array]){throw 'Invalid hook groups'}
    $groups=@(foreach($hookGroup in $property.Value){
     if($hookGroup.hooks -isnot [array]){throw 'Invalid hook group'}
-    $kept=@(foreach($hook in $hookGroup.hooks){if($hook.type -eq 'command' -and (Wanted-Command $hook.command)){$changed=$true}else{$hook}})
+    $kept=@(foreach($hook in $hookGroup.hooks){if($hook.type -eq 'command' -and (Wanted-Hook $hook)){$changed=$true}else{$hook}})
     if($kept.Count){$hookGroup.hooks=$kept;$hookGroup}
    })
    if($groups.Count){$inputSettings.hooks.($property.Name)=$groups}else{$inputSettings.hooks.PSObject.Properties.Remove($property.Name)}
   }
   if(-not @($inputSettings.hooks.PSObject.Properties).Count){$inputSettings.PSObject.Properties.Remove('hooks')}
  }
- if($inputSettings.statusLine.type -eq 'command' -and (Wanted-Command $inputSettings.statusLine.command)){$inputSettings.PSObject.Properties.Remove('statusLine');$changed=$true}
+ if($inputSettings.statusLine.type -eq 'command' -and (Wanted-Hook $inputSettings.statusLine)){$inputSettings.PSObject.Properties.Remove('statusLine');$changed=$true}
  if(-not $changed){Write-Output 'No Cardea Claude hooks found; nothing changed.';exit 0}
  $backup=Assert-LocalPath (Join-Path $runtime ('backups/hooks-removal-'+[guid]::NewGuid().ToString()));[IO.Directory]::CreateDirectory($backup) | Out-Null
  $temporary=Assert-LocalPath ($settings+'.cardea-'+[guid]::NewGuid().ToString()+'.tmp');[IO.File]::WriteAllText($temporary,($inputSettings | ConvertTo-Json -Depth 100 -WarningAction Stop)+[Environment]::NewLine,[Text.UTF8Encoding]::new($false))

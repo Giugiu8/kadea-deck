@@ -1,21 +1,11 @@
 import fs from 'node:fs';import path from 'node:path';import {createHash,randomUUID} from 'node:crypto';
-import {approvalEvent,hookOwner,installedGroups,mergeHooks,statusEvents} from '../claude-hooks.mjs';
+import {hookOwner,installedGroups,mergeHooks} from '../claude-hooks.mjs';
 import {loadPolicy,machinePolicyFile,writeConfig} from './approval-policy.mjs';
 import {restrictDirectory} from '../windows-acl.mjs';
+import {managedRoot,readManagedState} from '../managed-state.mjs';
 export const APPROVAL_CONSENT='approve-by-key';
 const COMMANDS=['setupClaude','enableApprovals','disableApprovals','removeStatus','removeClaude'];
-export const managedRoot=(env=process.env)=>path.join(env.ProgramFiles||'C:\\Program Files','ClaudeCode');
-// Read-only view of what the organization deployed. A file that cannot be read still counts as
-// present, as it does for Claude Code: this plugin must then stay out of the user's settings.
-export function readManagedState(root){
- const documents=[];let present=false;
- const load=file=>{try{const raw=fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'');present=true;documents.push(JSON.parse(raw));}catch(error){if(error.code!=='ENOENT')present=true;}};
- load(path.join(root,'managed-settings.json'));
- try{for(const name of fs.readdirSync(path.join(root,'managed-settings.d')).sort())if(name.endsWith('.json'))load(path.join(root,'managed-settings.d',name));}catch(error){if(error.code!=='ENOENT')present=true;}
- const deployed=event=>documents.some(doc=>Array.isArray(doc?.hooks?.[event])&&doc.hooks[event].some(group=>Array.isArray(group?.hooks)&&group.hooks.some(hook=>/cardea[^"]*bridge\.cjs/i.test(JSON.stringify(hook??'')))));
- const status=statusEvents.some(deployed),approval=deployed(approvalEvent),only=documents.some(doc=>doc?.allowManagedHooksOnly===true);
- return{present,only,status,approval,active:only||status||approval};
-}
+export {managedRoot,readManagedState};
 const fail=code=>{throw Error(code);};
 const bytes=file=>{try{return fs.readFileSync(file);}catch(error){if(error.code==='ENOENT')return null;throw error;}};
 const hash=value=>value===null?null:createHash('sha256').update(value).digest('hex');
@@ -29,7 +19,7 @@ function safePath(root,target){
  return target;
 }
 function parse(value){if(value===null)return{};if(value.length>2_000_000)fail('invalid_settings');try{const result=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(value));if(!result||typeof result!=='object'||Array.isArray(result))fail('invalid_settings');return result;}catch{fail('invalid_settings');}}
-function legacy(settings){return Object.values(settings.hooks??{}).some(groups=>Array.isArray(groups)&&groups.some(group=>Array.isArray(group.hooks)&&group.hooks.some(hook=>hookOwner(hook?.command)==='legacy')))||hookOwner(settings.statusLine?.command)==='legacy';}
+function legacy(settings){return Object.values(settings.hooks??{}).some(groups=>Array.isArray(groups)&&groups.some(group=>Array.isArray(group.hooks)&&group.hooks.some(hook=>hookOwner(hook)==='legacy')))||hookOwner(settings.statusLine?.command)==='legacy';}
 export function createIntegrations({home,appData,plugin,node=process.execPath,beforeWrite=()=>{},configDir=process.env.CLAUDE_CONFIG_DIR,managedDirectory=managedRoot(),machineFile=machinePolicyFile(),restrict=restrictDirectory}={}){
  const settings=()=>safePath(home,path.join(home,'.claude/settings.json'));
  const runtime=()=>safePath(home,path.join(home,'.cardeadeck'));
@@ -39,7 +29,7 @@ export function createIntegrations({home,appData,plugin,node=process.execPath,be
   if(path.resolve(plugin).toLowerCase()!==path.resolve(expected).toLowerCase())fail('plugin_location');safePath(appData,plugin);
   let manifest;try{manifest=JSON.parse(fs.readFileSync(path.join(plugin,'manifest.json'),'utf8'));}catch{fail('plugin_location');}
   if(manifest.UUID!=='de.cardea.deck')fail('plugin_location');
-  for(const name of['bridge','runtime','statusline','permission-auth','receiver-client','tool-summary']){const file=safePath(plugin,path.join(plugin,'hooks',name+'.cjs'));if(!fs.existsSync(file)||!fs.statSync(file).isFile())fail('incomplete_plugin');}
+  for(const name of['approval-rules','bridge','runtime','statusline','permission-auth','receiver-client','tool-summary']){const file=safePath(plugin,path.join(plugin,'hooks',name+'.cjs'));if(!fs.existsSync(file)||!fs.statSync(file).isFile())fail('incomplete_plugin');}
   if(!fs.existsSync(node)||!fs.statSync(node).isFile())fail('runtime_missing');
   if(claude){if(configDir)fail('custom_config');settings();}runtime();
  }
@@ -66,8 +56,9 @@ export function createIntegrations({home,appData,plugin,node=process.execPath,be
    // Never write hooks into the user's file here: they would not run, or would bypass IT.
    if(command==='enableApprovals'&&managed.approval)writeConfig(root,{approvalsEnabled:true,approvalsConsentAt:new Date().toISOString()});
    else if(command==='disableApprovals')writeConfig(root,{approvalsEnabled:false});
-   else fail('managed');
-   return status();
+   // Removing one's own old entries is still fine, and writes nothing if there are none.
+   else if(!['removeStatus','removeClaude'].includes(command))fail('managed');
+   if(!['removeStatus','removeClaude'].includes(command))return status();
   }
   const lock=safePath(home,path.join(root,'integrations.lock'));let handle;
   try{handle=fs.openSync(lock,'wx');}catch(error){

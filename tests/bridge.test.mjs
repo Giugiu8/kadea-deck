@@ -30,7 +30,7 @@ test('real bridge process forwards only the metadata allowlist',()=>fixture(asyn
  assert.deepEqual(result,{code:0,stdout:'',stderr:''});assert.equal(s.get('bridge-session').state,'working');assert.equal(s.get('bridge-session').lastToolId,'tool-123');assert.ok(!JSON.stringify([...s.sessions.values()]).includes('PRIVATE_SENTINEL'));
 }));
 test('permission roundtrip returns one native hook decision for the exact chosen request',()=>fixture(async(s,r,dir)=>{
- const result=call(dir,'PermissionRequest',{session_id:'approval-session',cwd:'G:\\ExampleProject',tool_name:'Read',tool_input:{file_path:'C:\\example\\PRIVATE_SENTINEL'}});
+ const result=call(dir,'PermissionRequest',{session_id:'approval-session',cwd:'G:\\ExampleProject',tool_name:'Read',tool_input:{file_path:'C:\\example\\PRIVATE_SENTINEL.txt'}});
  while(!s.get('approval-session')?.requestId)await once(s,'change');
  const target=s.get('approval-session');assert.equal(r.broker.answer({sessionId:target.id,requestId:target.requestId},'deny'),true);
  const response=await result;assert.equal(response.code,0);const value=JSON.parse(response.stdout);assert.equal(value.hookSpecificOutput.decision.behavior,'deny');assert.ok(!response.stdout.includes('PRIVATE_SENTINEL'));

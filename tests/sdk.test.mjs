@@ -36,11 +36,11 @@ test('built plugin registers with the real SDK and renders live receiver events 
   const inspect=payload=>socket.send(JSON.stringify({event:'sendToPlugin',action:'de.cardea.deck.session',context:'test-key',payload}));
   inspect({cmd:'setupClaude',nonce,plugin:'C:/must-not-use'});inspect({cmd:'setupClaude',nonce});
   await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.claude==='installed'));
-  const integrated=JSON.parse(fs.readFileSync(settingsFile));assert.deepEqual(integrated.env,foreign.env);assert.deepEqual(integrated.statusLine,foreign.statusLine);assert.ok(integrated.hooks.Stop[0].hooks[0].command.includes(pluginRoot));assert.equal(integrated.hooks.PermissionRequest,undefined,'Setup alone never adds the approval hook');
+  const integrated=JSON.parse(fs.readFileSync(settingsFile));assert.deepEqual(integrated.env,foreign.env);assert.deepEqual(integrated.statusLine,foreign.statusLine);assert.ok(integrated.hooks.Stop[0].hooks[0].args[0].includes(pluginRoot));assert.equal(integrated.hooks.PermissionRequest,undefined,'Setup alone never adds the approval hook');
   // Key approvals need the consent field, and enabling them adds exactly that hook.
   inspect({cmd:'enableApprovals',nonce});await pause(100);assert.equal(JSON.parse(fs.readFileSync(settingsFile)).hooks.PermissionRequest,undefined);
   inspect({cmd:'enableApprovals',nonce,consent:'approve-by-key'});await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.approvals==='on'));
-  assert.ok(JSON.parse(fs.readFileSync(settingsFile)).hooks.PermissionRequest[0].hooks[0].command.includes(pluginRoot));
+  assert.ok(JSON.parse(fs.readFileSync(settingsFile)).hooks.PermissionRequest[0].hooks[0].args[0].includes(pluginRoot));
   inspect({cmd:'removeClaude',nonce});await waitFor(()=>messages.some(m=>m.event==='sendToPropertyInspector'&&m.payload.message==='done'&&m.payload.claude==='not_set_up'&&m.payload.approvals==='off'));
   assert.deepEqual(JSON.parse(fs.readFileSync(settingsFile)),foreign);
   // Back on for the key tests below; the receiver reads the same consent record.
@@ -92,8 +92,12 @@ test('built plugin registers with the real SDK and renders live receiver events 
   assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,1);
   // One quick press must not allow anything; holding for a second does.
   const alerts=()=>messages.filter(m=>m.event==='showAlert'&&m.context==='approve-key').length,alertsBefore=alerts();
+  await pause(700);
   key('keyDown');await pause(30);key('keyUp');await waitFor(()=>alerts()>alertsBefore);
   assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,1,'A short press leaves the request open');
+  // A Multi Action cannot hold the key for anyone.
+  const multi=alerts();socket.send(JSON.stringify({event:'keyDown',action:'de.cardea.deck.permission',context:'approve-key',device:'test-device',payload:{controller:'Keypad',coordinates:{column:1,row:0},isInMultiAction:true,settings:{decision:'allow'},state:0}}));await waitFor(()=>alerts()>multi);
+  assert.equal((await(await fetch(base+'/status',{headers})).json()).pendingRequests,1);
   key('keyDown');await pause(1050);key('keyUp');assert.equal((await next).hookSpecificOutput.decision.behavior,'allow');
   // Commands never wait for a key: no decision at once, so Claude opens its own dialog.
   assert.deepEqual(await permission('Bash',{command:'echo PRIVATE_SENTINEL'}),{});

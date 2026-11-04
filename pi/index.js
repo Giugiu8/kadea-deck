@@ -18,7 +18,7 @@ window.connectElgatoStreamDeckSocket=(port,uuid,event,info,actionInfo)=>{
   const claude=p.claude==='managed'?'Claude: hooks managed by your organization.':p.claude==='managed_missing'?'Claude: your organization restricts hooks and has not deployed Cardea.':p.claude==='installed'?(p.sourceHasEvents?'Claude: hooks installed; source active.':'Claude: hooks installed. Start a new chat.'):p.claude==='not_set_up'?'Claude: not set up.':p.claude==='repair_needed'?'Claude: setup needs repair.':messages[p.claude]||'Claude: unavailable.';
   $('approvals-state').textContent=approvalText[p.approvals]||'';if(Array.isArray(p.allowlist))$('allowlist').textContent=p.allowlist.join(', ')||'none';$('pending').hidden=!p.pending;$('pending').textContent=p.pending?'Pending request: '+p.pending:'';
   $('status').textContent=[messages[p.blocked]||'',messages[p.message]||'',claude,p.codexConnected?'Codex: connected.':p.codexConfigured?'Codex: configured; source not connected.':'Codex: not connected.',p.customStatusLine?'Custom status line preserved; Claude quota may be unavailable.':''].filter(Boolean).join(' ');
-  for(const id of buttons)$(id).disabled=busy||typeof nonce!=='string'||!!p.blocked;$('enableApprovals').disabled||=!$('approvalConsent').checked||p.approvals==='on';
+  for(const id of buttons)$(id).disabled=busy||typeof nonce!=='string'||p.blocked==='integrity_failed';$('enableApprovals').disabled||=!$('approvalConsent').checked||p.approvals==='on';
  };
 };
 for(const id of buttons)$(id).onclick=()=>{send(id);if(id==='enableApprovals')$('approvalConsent').checked=false;};

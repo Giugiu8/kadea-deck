@@ -5,16 +5,17 @@
 **Changed behavior**
 
 - **Set up Claude** now adds status hooks only. The `PermissionRequest` hook needs a separate opt-in with a checkbox. Each group can be removed alone. An approval hook from an earlier version stays inactive and is removed by setup.
-- Approve keys need a one-second hold, also for Codex. A short press shows the alert and answers nothing.
-- Only allowlisted tools (default `Read`, `Grep`, `Glob`, `LS`) wait for a key. Commands, file changes, network access and sub-agents go straight to Claude's own dialog and cannot be added by configuration. So do UNC and device paths, requests with invisible characters, and unknown tools whose whole input does not fit on the key.
+- Approve keys need a one-second hold, also for Codex. A short press shows the alert and answers nothing. Multi Actions are refused, and a press within 0.6 s of a new request's image does not count.
+- Hooks are written as `command` plus `args`, without a shell, so they also run on PCs without Git Bash and with a profile on a network path. This needs a Claude Code version from May 2026 or later. **Set up Claude** replaces older entries.
+- Only `Read`, `Grep`, `Glob` and `LS` wait for a key by default. Other built-in tools go straight to Claude's own dialog and cannot be added by configuration; only exact, short MCP tool names can. So do network targets, anything outside plain Western characters, paths whose target cannot be told from the text, oversized input, and unknown tools whose whole input does not fit on the key.
 - Approval keys and the Property Inspector show the tool and a shortened, redacted summary of the request. Requests without displayable content stay in the dialog.
 - `bin/open.exe` is gone: links open through Windows' `explorer.exe`.
 
 **Added**
 
 - `decisions.jsonl`: time, session, tool and outcome only, bounded and rotated.
-- Runtime integrity check against `integrity.json`. On a mismatch, no hooks are served and every key shows a warning.
-- Exact current-user ACLs for `.cardeadeck` and `connection.json`, verified by reading them back. If that fails, no service starts.
+- Runtime integrity check of plugin code against `integrity.json`. On a mismatch, no hooks are served and every key shows a warning. The hook also applies its own rules and the machine policy before printing an allow.
+- Exact current-user ACLs for `.cardeadeck` and `connection.json`, verified by reading them back. If that fails, no Claude hooks are served; Codex keys keep working.
 - Release workflow on tags with build attestation, SBOM and an independent rebuild comparison. All actions are pinned by commit SHA. `reproduce.mjs` and [docs/REPRODUCE.md](docs/REPRODUCE.md).
 - Managed settings: generator, template, machine policy and [docs/MANAGED-SETTINGS.md](docs/MANAGED-SETTINGS.md). The plugin does not write user settings when hooks are managed.
 - [THREAT-MODEL.md](THREAT-MODEL.md).

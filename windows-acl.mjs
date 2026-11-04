@@ -7,7 +7,8 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 const tool=name=>path.join(process.env.SystemRoot||'C:\\Windows','System32',name);
-const run=(name,args)=>execFileSync(tool(name),args,{encoding:'utf8',windowsHide:true,timeout:20_000,stdio:['ignore','pipe','pipe']});
+const run=(name,args)=>execFileSync(tool(name),args,{encoding:'utf8',windowsHide:true,timeout:8000,stdio:['ignore','pipe','pipe']});
+const MARKER='.cardea-runtime';
 let cachedSid=null;
 export function currentUserSid(){
  if(cachedSid)return cachedSid;
@@ -29,7 +30,9 @@ export function parseAces(sddl){
  const dacl=/^D:([A-Z]*)((?:\([^)]*\))*)/.exec(sddl);if(!dacl)throw Error('acl_failed');
  return{protected:dacl[1].includes('P'),aces:[...dacl[2].matchAll(/\(([^)]*)\)/g)].map(([,ace])=>{const parts=ace.split(';');return{type:parts[0],flags:parts[1],rights:parts[2],sid:parts[5]};})};
 }
-const onlyUser=(sddl,sid)=>{const{aces}=parseAces(sddl);return aces.length>0&&aces.every(ace=>ace.sid===sid&&ace.type==='A');};
+// Windows prints a built-in account by its short name even when it is the current user.
+export const sameAccount=(name,sid)=>name===sid||(name==='LA'&&sid.endsWith('-500'))||(name==='LG'&&sid.endsWith('-501'));
+const onlyUser=(sddl,sid)=>{const{aces}=parseAces(sddl);return aces.length>0&&aces.every(ace=>sameAccount(ace.sid,sid)&&ace.type==='A');};
 export function isPrivateToCurrentUser(target,{recursive=false}={}){
  if(process.platform!=='win32')return true;
  const sid=currentUserSid(),entries=readAcls(target,{recursive});
@@ -55,6 +58,9 @@ function refuseLinksInside(directory){
 // would lock other software and users out of it.
 export function refuseSystemLocation(directory,env=process.env){
  const resolved=path.resolve(directory),folded=resolved.toLowerCase(),separator=path.sep;
+ // Only inside the user's profile: nobody else can have created the folder there and kept ownership of it.
+ const homes=[env.USERPROFILE,os.homedir()].filter(Boolean).map(value=>path.resolve(value).toLowerCase()+separator);
+ if(!homes.some(home=>folded.startsWith(home)))throw Error('protected_path');
  if(path.parse(resolved).root.toLowerCase()===folded+separator||path.parse(resolved).root.toLowerCase()===folded)throw Error('protected_path');
  const inside=folded.endsWith(separator)?folded:folded+separator;
  for(const name of ['USERPROFILE','SystemRoot','WINDIR','ProgramFiles','ProgramFiles(x86)','ProgramData','APPDATA','LOCALAPPDATA','TEMP','PUBLIC']){
@@ -67,18 +73,26 @@ export function refuseSystemLocation(directory,env=process.env){
 // Failures throw: the caller must then not publish secrets into this location.
 export function restrictFile(target){
  if(process.platform!=='win32')return false;
- refuseLink(target);setExact(target,'F',currentUserSid());
+ refuseLink(target);const sid=currentUserSid();
+ // Normally it inherited the private entry from its folder, and only needs a look.
+ if(onlyUser(readAcls(target)[0].sddl,sid))return true;
+ setExact(target,'F',sid);
  if(!isPrivateToCurrentUser(target))throw Error('acl_failed');
  return true;
 }
 export function restrictDirectory(directory){
  if(process.platform!=='win32')return false;
  refuseSystemLocation(directory);refuseLink(directory);refuseLinksInside(directory);
+ // Stripping inheritance from someone else's folder would lock people out: it must be empty, ours by
+ // name, or marked by an earlier run.
+ const marker=path.join(directory,MARKER);
+ if(path.basename(directory)!=='.cardeadeck'&&!fs.existsSync(marker)&&fs.readdirSync(directory).length)throw Error('protected_path');
  // Already private: nothing to do, and no moment in which it would inherit anything.
- if(isPrivateToCurrentUser(directory,{recursive:true}))return true;
+ if(isPrivateToCurrentUser(directory,{recursive:true})){if(!fs.existsSync(marker))fs.writeFileSync(marker,'');return true;}
  const sid=currentUserSid();setExact(directory,'(OI)(CI)F',sid);
  // Older files may carry explicit entries: reset them to inherit the private parent.
  if(fs.readdirSync(directory).length)run('icacls.exe',[path.join(directory,'*'),'/reset','/T','/C','/L','/Q']);
+ fs.writeFileSync(marker,'');
  if(!isPrivateToCurrentUser(directory,{recursive:true}))throw Error('acl_failed');
  return true;
 }

@@ -6,7 +6,7 @@ import {DeckStore} from './store.mjs';
 import {startReceiver} from './receiver.mjs';
 import {cardSvg} from './cards.mjs';
 import {refreshDesktopMetadata,openUrl,USAGE,NEW_CHAT} from './desktop.mjs';
-import {verifyPluginFiles} from './integrity.mjs';
+import {unexpectedPluginFiles,verifyPluginFiles} from './integrity.mjs';
 import runtime from '../hooks/runtime.cjs';
 import {CodexStore} from './codex-store.mjs';
 import {createIntegrations} from './integrations.mjs';
@@ -14,11 +14,15 @@ import {registerIntegrationUi} from './integration-ui.mjs';
 import {discoverCodex} from './windows-apps.mjs';
 const directory=runtime.runtimeDirectory();
 const HOLD_MS=1000;
+// A press that began on the previous image must not reach a new request.
+const ARM_MS=600;
+const HOLD_KINDS=new Set(['permission','codex-permission','codex-stop']);
 const pluginDirectory=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 // Set once the files or their permissions cannot be trusted: no hook service, a warning on every key.
 let serviceProblem=null;
 const integrityResult=verifyPluginFiles(pluginDirectory);
 if(integrityResult){serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files failed the integrity check (${integrityResult.reason}${integrityResult.file?': '+integrityResult.file:''}). Hooks are not served; reinstall the plugin.`);}
+else{const extra=unexpectedPluginFiles(pluginDirectory);if(extra.length)streamDeck.logger.warn(`Cardea Deck: files not part of this release: ${extra.slice(0,5).join(', ')}`);}
 // Migrate state only from the native plugin's own view. Never reuse an old
 // connection/token, or overwrite a shared file created by a newer receiver.
 fs.mkdirSync(directory,{recursive:true,mode:0o700});
@@ -37,7 +41,7 @@ if(!serviceProblem)try{receiver=await startReceiver(store,{directory,getDiagnost
 // Hooks find no receiver and return no decision, so Claude keeps using its own dialogs.
 if(serviceProblem)try{fs.rmSync(publicationFile,{force:true});}catch{}
 let approvalsOn=false;
-const refreshPolicy=()=>{try{approvalsOn=receiver?.policy().enabled===true;}catch{approvalsOn=false;}};refreshPolicy();
+const refreshPolicy=()=>{try{approvalsOn=receiver?.policy().enabled===true;receiver?.broker.revalidate();}catch{approvalsOn=false;}};refreshPolicy();
 setInterval(refreshPolicy,5000).unref();
 const metadataRoots=()=>{const base=path.join(process.env.LOCALAPPDATA,'Claude-Data');try{return fs.readdirSync(base,{withFileTypes:true}).filter(e=>e.isDirectory()&&e.name.startsWith('claude')).map(e=>path.join(base,e.name,'claude-code-sessions'));}catch{return[];}};
 let chatOffset=0;
@@ -48,7 +52,8 @@ function selectedCard(s,kicker='CLAUDE',emptyCreatesChat=false) {
   return s?{kind:'session',agent:'claude',kicker,title:lines(s.title||s.project),subtitle:s.project,hint:s.requestId?s.pendingTool:s.stale?'Stale signal':!s.desktopId?'No chat link':s.project,footer:s.requestId?`${s.pendingTool||'Tool'} · INPUT`:label[s.state],state:s.state,selected:s.id===store.selected}:{kind:'session',agent:'claude',kicker,title:store.connected?['Empty slot']:['No source'],empty:store.connected,subtitle:'',footer:store.connected?'NO CHAT ASSIGNED':'UNKNOWN STATUS',state:'unknown'};
 }
 function view(kind,settings){
-  if(serviceProblem)return{kind:'action',title:'Reinstall',caption:serviceProblem==='acl_failed'?'FOLDER NOT PRIVATE':'FILES CHANGED',icon:'close',state:'error',disabled:true};
+  if(serviceProblem==='integrity_failed')return{kind:'action',title:'Reinstall',caption:'FILES CHANGED',icon:'close',state:'error',disabled:true};
+  if(serviceProblem&&kind==='permission')return{kind:'action',title:'Hooks off',caption:'FOLDER NOT PRIVATE',icon:'close',state:'error',disabled:true};
   if(kind.startsWith('codex-')){
     const target=codex?.get(),task=kind==='codex-session'?codex?.list()[Math.max(0,Number(settings.slot)||0)]:target;
     if(kind==='codex-session')return task?{kind:'session',agent:'codex',title:lines(task.title),hint:task.state==='unknown'?'Unverified signal':task.project,state:task.state,selected:task.selected}:{kind:'action',title:'New chat',icon:'chatplus',caption:codex?'Empty slot':'Set up Codex'};
@@ -61,11 +66,11 @@ function view(kind,settings){
   if(kind==='summary')return {kind:'summary',agent:'claude',kicker:'CLAUDE',title:store.connected?String(list.length):'—',subtitle:store.connected?'captured chats':'waiting for source',footer:store.connected?`${list.filter(s=>s.state==='attention').length} need input`:'UNKNOWN STATUS',state:list.some(s=>s.state==='attention')?'attention':store.connected?'idle':'unknown'};
   if(kind==='target')return selectedCard(s,'CLAUDE · TARGET');
   if(kind==='quota'){const q=store.quotaView(settings.window==='five_hour'?'five_hour':'seven_day');if(q&&!q.stale)return{kind:'quota',kicker:settings.window==='five_hour'?'CLAUDE · 5 HOURS':'CLAUDE · WEEK',value:`${Math.round(100-q.used)}%`,subtitle:'remaining · reported by source',progress:(100-q.used)/100,state:'unread'};return{kind:'action',kicker:'CLAUDE',title:'Usage',subtitle:q?'Stale value · open':'Open actual limits',icon:'gauge',state:'unknown'};}
-  if(kind==='permission'){const deny=settings.decision==='deny',summary=s?.requestId?receiver?.broker.summary(s.requestId):null;if(summary)return{kind:'approval',decision:deny?'deny':'allow',tool:s.pendingTool,summary,title:deny?'Decline':'Hold: Approve'};return{kind:'action',kicker:'CLAUDE',title:deny?'Decline':'Approve',caption:!approvalsOn?'Key approvals off':s?.state==='attention'?'Check in chat':'No request',subtitle:'No selected request',icon:deny?'close':'check',state:'unknown',disabled:true};}
+  if(kind==='permission'){const deny=settings.decision==='deny',request=s?.requestId?receiver?.broker.request(s.requestId):null;if(request?.summary)return{kind:'approval',decision:deny?'deny':'allow',tool:request.tool,summary:request.summary,marker:s.requestId.slice(0,4).toUpperCase(),project:s.project,title:deny?'Decline':'Hold: Approve'};return{kind:'action',kicker:'CLAUDE',title:deny?'Decline':'Approve',caption:!approvalsOn?'Key approvals off':s?.state==='attention'?'Check in chat':'No request',subtitle:'No selected request',icon:deny?'close':'check',state:'unknown',disabled:true};}
   return{kind:'action',kicker:'CLAUDE',title:kind==='ack'?'Read':'Open',subtitle:kind==='ack'?'This result only':'Selected chat',icon:kind==='ack'?'read':'open',state:kind==='ack'&&s?.unread?'unread':'idle',disabled:kind==='ack'&&!s?.unread};
 }
 function inputBinding(kind,settings){const cd=kind.startsWith('codex-');const s=cd?(kind==='codex-session'?codex?.list()[Math.max(0,Number(settings.slot)||0)]:codex?.get()):kind==='session'?store.list()[(['claude','chats'].includes(settings.page)?chatOffset:0)+Math.max(0,Number(settings.slot)||0)]:store.get();return{session:s?{...s}:null,settings:{...settings},codexSnapshot:cd?codex?.snapshot(s):null};}
-function paint(){if(chatOffset>=store.list().length)chatOffset=0;for(const [id,{kind,action,settings}]of contexts){const svg=cardSvg(view(kind,settings)),binding=inputBinding(kind,settings);if(images.get(id)===svg){if(!pendingImages.has(id))bindings.set(id,binding);continue;}images.set(id,svg);const token=++imageSequence;pendingImages.set(id,token);action.setImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`).then(()=>{if(pendingImages.get(id)===token&&contexts.has(id)){bindings.set(id,binding);pendingImages.delete(id);}}).catch(()=>{if(pendingImages.get(id)===token){pendingImages.delete(id);images.delete(id);}});}}
+function paint(){if(chatOffset>=store.list().length)chatOffset=0;for(const [id,{kind,action,settings}]of contexts){let svg,binding;try{svg=cardSvg(view(kind,settings));binding=inputBinding(kind,settings);encodeURIComponent(svg);}catch{bindings.delete(id);continue;}if(images.get(id)===svg){if(!pendingImages.has(id))bindings.set(id,{...binding,shownAt:bindings.get(id)?.shownAt??Date.now()});continue;}images.set(id,svg);const token=++imageSequence;pendingImages.set(id,token);action.setImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`).then(()=>{if(pendingImages.get(id)===token&&contexts.has(id)){bindings.set(id,{...binding,shownAt:Date.now()});pendingImages.delete(id);}}).catch(()=>{if(pendingImages.get(id)===token){pendingImages.delete(id);images.delete(id);}});}}
 async function navigate(s){
   if(!s)return false;store.select(s.id);
   if(!s.desktopId)return false;
@@ -77,11 +82,16 @@ class CardeaAction extends SingletonAction {
   onWillAppear(ev){contexts.set(ev.action.id,{kind:this.kind,action:ev.action,settings:ev.payload.settings??{}});paint();}
   onWillDisappear(ev){contexts.delete(ev.action.id);images.delete(ev.action.id);down.delete(ev.action.id);bindings.delete(ev.action.id);pendingImages.delete(ev.action.id);}
   onDidReceiveSettings(ev){contexts.set(ev.action.id,{kind:this.kind,action:ev.action,settings:ev.payload.settings??{}});images.delete(ev.action.id);paint();}
-  onKeyDown(ev){if(serviceProblem){void ev.action.showAlert();return;}inputDiagnostics.keyDownCount++;inputDiagnostics.lastAction=this.kind;const binding=bindings.get(ev.action.id);if(!binding||pendingImages.has(ev.action.id)){down.delete(ev.action.id);inputDiagnostics.lastResult='updating';return;}down.set(ev.action.id,{...binding,at:Date.now()});}
+  onKeyDown(ev){if(serviceProblem==='integrity_failed'){void ev.action.showAlert();return;}
+    // A Multi Action sends its presses without a person holding this key.
+    if(HOLD_KINDS.has(this.kind)&&ev.payload.isInMultiAction){down.delete(ev.action.id);void ev.action.showAlert();return;}
+    inputDiagnostics.keyDownCount++;inputDiagnostics.lastAction=this.kind;const binding=bindings.get(ev.action.id);if(!binding||pendingImages.has(ev.action.id)){down.delete(ev.action.id);inputDiagnostics.lastResult='updating';return;}
+    if(['permission','codex-permission'].includes(this.kind)&&binding.settings.decision!=='deny'&&Date.now()-binding.shownAt<ARM_MS){down.delete(ev.action.id);inputDiagnostics.lastResult='arming';void ev.action.showAlert();return;}
+    down.set(ev.action.id,{...binding,at:performance.now()});}
   async onKeyUp(ev){
     inputDiagnostics.keyUpCount++;
     const captured=down.get(ev.action.id);down.delete(ev.action.id);if(!captured)return;
-    const {session:s,settings}=captured,held=Date.now()-captured.at>=HOLD_MS;let ok=false;
+    const {session:s,settings}=captured,held=performance.now()-captured.at>=HOLD_MS;let ok=false;
     try{
       // Empty at key-down means a new composer, even if the list changes while held.
       if(this.kind==='codex-session'){
@@ -118,10 +128,10 @@ async function connectCodex(stillCurrent=()=>true,persist=true){
 function pendingText(){const s=store.get(),summary=s?.requestId?receiver?.broker.summary(s.requestId):null;return summary?`${s.pendingTool}: ${summary.text}`:'';}
 const integrationUi=registerIntegrationUi({ui:streamDeck.ui,manager:integrations,connectCodex,blocked:()=>serviceProblem,diagnostics:()=>{refreshPolicy();return{sourceHasEvents:store.connected,codexConfigured:integrations.codexEnabled(),codexConnected:codex?.connected===true,pending:pendingText()};}});
 store.on('change',()=>integrationUi.refresh());
-if(!serviceProblem&&integrations.codexEnabled())void connectCodex(()=>true,false).catch(()=>{});
+if(serviceProblem!=='integrity_failed'&&integrations.codexEnabled())void connectCodex(()=>true,false).catch(()=>{});
 // Hook files are read anew on every event, so recheck them while running too.
-setInterval(()=>{if(serviceProblem)return;const result=verifyPluginFiles(pluginDirectory);if(!result)return;serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files changed while running (${result.reason}). Hooks are no longer served.`);void receiver?.close().catch(()=>{});receiver=null;refreshPolicy();codex?.close();codex=null;paint();},5*60_000).unref();
-setInterval(()=>{if(!serviceProblem&&codexExecutable&&!fs.existsSync(codexExecutable))void connectCodex(()=>true,false).catch(()=>{});},60_000).unref();
+setInterval(()=>{if(serviceProblem==='integrity_failed')return;const result=verifyPluginFiles(pluginDirectory);if(!result)return;serviceProblem='integrity_failed';streamDeck.logger.error(`Cardea Deck: plugin files changed while running (${result.reason}). Hooks are no longer served.`);void receiver?.close().catch(()=>{});receiver=null;refreshPolicy();codex?.close();codex=null;paint();},5*60_000).unref();
+setInterval(()=>{if(serviceProblem!=='integrity_failed'&&codexExecutable&&!fs.existsSync(codexExecutable))void connectCodex(()=>true,false).catch(()=>{});},60_000).unref();
 store.on('change',paint);setInterval(paint,1000).unref();
 let scanning=false,lastScan=0;async function refresh(){if(scanning||Date.now()-lastScan<5000)return;scanning=true;lastScan=Date.now();try{for(const root of metadataRoots())await refreshDesktopMetadata(store,root);}finally{scanning=false;}}
 setInterval(refresh,30_000).unref();store.on('change',()=>{if(!scanning)void refresh();});

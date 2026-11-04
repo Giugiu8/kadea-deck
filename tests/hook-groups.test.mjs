@@ -12,7 +12,7 @@ import {DeckStore} from '../src/store.mjs';
 
 const options={node:'C:\\tools\\node.exe',plugin:'C:\\p\\de.cardea.deck.sdPlugin'};
 const foreign={env:{KEEP:'1'},hooks:{Stop:[{hooks:[{type:'command',command:'echo mine'}]}],PermissionRequest:[{hooks:[{type:'command',command:'echo my-approver'}]}]},statusLine:{type:'command',command:'echo status'}};
-const ownOn=(settings,event)=>(settings.hooks?.[event]??[]).flatMap(group=>group.hooks).filter(hook=>owned(hook.command));
+const ownOn=(settings,event)=>(settings.hooks?.[event]??[]).flatMap(group=>group.hooks).filter(hook=>owned(hook));
 
 test('default merge adds status hooks and never the approval hook',()=>{
  const merged=mergeHooks({},options);
@@ -47,7 +47,7 @@ function fixture(fn){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cardea-groups-')),home=path.join(dir,'user'),appData=path.join(home,'AppData/Roaming'),plugin=path.join(appData,'Elgato/StreamDeck/Plugins/de.cardea.deck.sdPlugin'),node=path.join(dir,'node.exe');
  const put=(file,data)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,typeof data==='string'?data:JSON.stringify(data));};
  put(node,'synthetic');put(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck'});
- for(const name of ['bridge','runtime','statusline','permission-auth','receiver-client','tool-summary'])put(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
+ for(const name of ['approval-rules','bridge','runtime','statusline','permission-auth','receiver-client','tool-summary'])put(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
  const settings=path.join(home,'.claude/settings.json');put(settings,foreign);
  const manager=extra=>createIntegrations({home,appData,plugin,node,configDir:'',managedDirectory:path.join(dir,'managed'),machineFile:path.join(dir,'machine.json'),...extra});
  const read=()=>JSON.parse(fs.readFileSync(settings));
@@ -100,7 +100,7 @@ test('portable setup adds the approval hook only with the flag and uninstall wit
  const home=path.join(dir,'user'),appData=path.join(home,'AppData/Roaming'),directory=path.join(dir,'download'),settings=path.join(home,'.claude/settings.json'),runtime=path.join(home,'.cardeadeck');
  try{
   write(settings,foreign);const profile=profileTemplate(),base=path.join(directory,'profile-template',profileId);write(path.join(base,'manifest.json'),profile.manifest);profile.pages.forEach((p,i)=>write(path.join(base,'Profiles',profile.ids[i],'manifest.json'),p));write(path.join(base,'Profiles',profile.manifest.Pages.Default,'manifest.json'),{Controllers:[{Type:'Keypad',Actions:{}}]});
-  const plugin=path.join(directory,'de.cardea.deck.sdPlugin');write(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck',Version:'0.9.0.0'});write(path.join(plugin,'bin/plugin.mjs'),'// fixture');for(const name of ['bridge','statusline','permission-auth','receiver-client','runtime','tool-summary'])write(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
+  const plugin=path.join(directory,'de.cardea.deck.sdPlugin');write(path.join(plugin,'manifest.json'),{UUID:'de.cardea.deck',Version:'0.9.0.0'});write(path.join(plugin,'bin/plugin.mjs'),'// fixture');for(const name of ['approval-rules','bridge','runtime','statusline','permission-auth','receiver-client','tool-summary'])write(path.join(plugin,'hooks',name+'.cjs'),'// fixture');
   write(path.join(appData,'Elgato/StreamDeck/ProfilesV3/existing.sdProfile/manifest.json'),{Device:{Model:'20GBA9901',UUID:'fixture-device'}});
   const files={};(function walk(root){for(const e of fs.readdirSync(root,{withFileTypes:true})){const file=path.join(root,e.name);if(e.isDirectory())walk(file);else files[path.relative(directory,file).replaceAll('\\','/')]=createHash('sha256').update(fs.readFileSync(file)).digest('hex');}})(directory);write(path.join(directory,'integrity.json'),{schema:1,version:'0.9.0',files});
   const read=()=>JSON.parse(fs.readFileSync(settings));

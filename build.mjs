@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import {writeProfile,packProfile,profileId} from './profile.mjs';
-import {pluginFiles,integrityFile} from './plugin-files.mjs';
+import {checkedFiles,integrityFile,pluginFiles} from './plugin-files.mjs';
 import {buildIntegrityManifest} from './src/integrity.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const require=createRequire(path.join(root,'package.json'));
@@ -33,12 +33,12 @@ if(fs.existsSync(path.join(out,'imgs/key.svg')))fs.unlinkSync(path.join(out,'img
 }
 const labels={session:'Claude chat',summary:'Claude overview',target:'Select Claude target',permission:'Claude approval',ack:'Mark result as read',quota:'Claude usage',open:'Open Claude','codex-session':'Codex chat status','codex-permission':'Codex approval','codex-stop':'Stop Codex (hold)'};
 if(!codeOnly){const generatedProfile=path.join(root,'dist/profile-template',profileId);writeProfile(generatedProfile,version);packProfile(generatedProfile,path.join(out,'profiles/Cardea Deck.streamDeckProfile'));}
-const manifest={UUID:'de.cardea.deck',Name:'Cardea Deck',Author:'Cardea',Description:'Unified Claude and Codex chat cards with local controls.',Version:`${version}.0`,SDKVersion:2,Icon:'imgs/plugin',Category:'Cardea Deck',CategoryIcon:'imgs/plugin',CodePath:'bin/plugin.mjs',Nodejs:{Version:'20'},OS:[{Platform:'windows',MinimumVersion:'10'}],Software:{MinimumVersion:'7.1'},Actions:Object.entries(labels).map(([key,Name])=>({UUID:`de.cardea.deck.${key}`,Name,Icon:'imgs/key',Tooltip:Name,PropertyInspectorPath:'pi/index.html',Controllers:['Keypad'],States:[{Image:'imgs/key',ShowTitle:false}]}))};
+const manifest={UUID:'de.cardea.deck',Name:'Cardea Deck',Author:'Cardea',Description:'Unified Claude and Codex chat cards with local controls.',Version:`${version}.0`,SDKVersion:2,Icon:'imgs/plugin',Category:'Cardea Deck',CategoryIcon:'imgs/plugin',CodePath:'bin/plugin.mjs',Nodejs:{Version:'20'},OS:[{Platform:'windows',MinimumVersion:'10'}],Software:{MinimumVersion:'7.1'},Actions:Object.entries(labels).map(([key,Name])=>({UUID:`de.cardea.deck.${key}`,Name,Icon:'imgs/key',Tooltip:Name,PropertyInspectorPath:'pi/index.html',Controllers:['Keypad'],...(['permission','codex-permission','codex-stop'].includes(key)?{SupportedInMultiActions:false}:{}),States:[{Image:'imgs/key',ShowTitle:false}]}))};
 manifest.Profiles=[{Name:'profiles/Cardea Deck',DeviceType:0,Readonly:false,AutoInstall:true,DontAutoSwitchWhenInstalled:true}];
 fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify(manifest,null,2));
 fs.writeFileSync(path.join(out,'package.json'),JSON.stringify({name:'cardea-deck',private:true,type:'module',version}));
 fs.mkdirSync(path.join(out,'pi'),{recursive:true});fs.writeFileSync(path.join(out,'pi/index.html'),fs.readFileSync(path.join(root,'pi/index.html'),'utf8').replaceAll('__VERSION__',version));
 for(const name of['index.js','style.css'])fs.copyFileSync(path.join(root,'pi',name),path.join(out,'pi',name));
 // Written last: the running plugin checks every packaged file against this list.
-if(!codeOnly)fs.writeFileSync(path.join(out,integrityFile),JSON.stringify(buildIntegrityManifest(out,pluginFiles.filter(name=>name!==integrityFile),version),null,2)+'\n');
+fs.writeFileSync(path.join(out,integrityFile),JSON.stringify(buildIntegrityManifest(out,checkedFiles,version),null,2)+'\n');
 console.log(`Built ${out}`);

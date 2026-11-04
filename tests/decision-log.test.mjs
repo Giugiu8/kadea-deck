@@ -36,9 +36,9 @@ function hook(home,session,tool,input){const child=spawn(process.execPath,[bridg
 test('allow, deny, timeout and deferred requests are each recorded once by the real path',()=>temp(async dir=>{
  const store=new DeckStore(),policy=()=>({enabled:true,allowlist:['Read']}),receiver=await startReceiver(store,{directory:dir,policy,timeoutMs:400});
  try{
-  const decide=async(session,decision)=>{const done=hook(dir,session,'Read',{file_path:'C:\\PRIVATE_SENTINEL'});while(!store.get(session)?.requestId)await once(store,'change');assert.equal(receiver.broker.answer({sessionId:session,requestId:store.get(session).requestId},decision),true);await done;};
+  const decide=async(session,decision)=>{const done=hook(dir,session,'Read',{file_path:'C:\\PRIVATE_SENTINEL.txt'});while(!store.get(session)?.requestId)await once(store,'change');assert.equal(receiver.broker.answer({sessionId:session,requestId:store.get(session).requestId},decision),true);await done;};
   await decide('allow-session','allow');await decide('deny-session','deny');
-  await hook(dir,'timeout-session','Read',{file_path:'C:\\PRIVATE_SENTINEL'});
+  await hook(dir,'timeout-session','Read',{file_path:'C:\\PRIVATE_SENTINEL.txt'});
   await hook(dir,'deferred-session','Bash',{command:'PRIVATE_SENTINEL'});
   assert.deepEqual(lines(dir).map(({sessionId,tool,decision,reason})=>[sessionId,tool,decision,reason]),[['allow-session','Read','allow',undefined],['deny-session','Read','deny',undefined],['timeout-session','Read','timeout',undefined],['deferred-session','Bash','deferred','not_allowlisted']]);
   assert.ok(!fs.readFileSync(path.join(dir,'decisions.jsonl'),'utf8').includes('PRIVATE_SENTINEL'));

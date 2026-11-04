@@ -4,7 +4,7 @@
 // It only prints. Deploying the file stays with the administrator.
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {approvalEvent,statusEvents} from './claude-hooks.mjs';
+import {approvalEvent,statusEvents,statusLineCommand} from './claude-hooks.mjs';
 export const DEFAULT_NODE='C:\\Program Files\\nodejs\\node.exe';
 export const DEFAULT_HOOKS='C:\\Program Files\\Cardea Deck\\hooks';
 const checked=value=>{if(typeof value!=='string'||/["\r\n%$`!&|<>^]/.test(value)||!path.win32.isAbsolute(value))throw Error('Unsupported path: '+value);return value;};
@@ -18,7 +18,7 @@ export function managedBlock({node=DEFAULT_NODE,hooks=DEFAULT_HOOKS,approvals=fa
  const block={...(onlyManaged?{allowManagedHooksOnly:true}:{}),hooks:{}};
  for(const event of statusEvents)block.hooks[event]=entry(event,2);
  if(approvals)block.hooks[approvalEvent]=entry(approvalEvent,60);
- if(statusLine)block.statusLine={type:'command',command:`"${node}" "${path.win32.join(hooks,'statusline.cjs')}"`};
+ if(statusLine){const line=statusLineCommand(node,path.win32.join(hooks,'statusline.cjs'));if(line)block.statusLine={type:'command',command:line};}
  return block;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
